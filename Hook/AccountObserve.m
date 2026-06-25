@@ -8,7 +8,7 @@
 // Hook/AccountObserve.m — account identity observation + switching.
 //
 // Bodies use the name-based API (KIOUHookOrig / KIOUHookInstall) and never
-// reference KIOU_KF_HOOK_* enum or KIOU_KF_SITE_RVA_* directly.
+// reference KIOU_HOOK_ID_* enum or KIOU_HOOK_RVA_* directly.
 //
 // Hook sites (resolved by name at install time):
 //
