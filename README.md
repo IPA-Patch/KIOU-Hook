@@ -6,7 +6,7 @@ Consumed as a git submodule at `vendor/KIOU-Hook/` by every IPA-Patch tweak that
 
 ## What lives here
 
-- `KIOUHook.h` — the single C header that every consumer `#import`s. Declares the hook-id and entry-slot enums, the per-version `KIOU_KF_SITE_RVA_*` constants, cave geometry, and the dispatcher externs (`g_inject_entry[]`, `g_unityBase`, `KFChinlanPublish`).
+- `KIOUHook.h` — the single C header that every consumer `#import`s. Declares the hook-id and entry-slot enums, the per-version `KIOU_HOOK_RVA_*` constants, cave geometry, and the dispatcher externs (`g_inject_entry[]`, `g_unityBase`, `KFChinlanPublish`).
 - `Account/Persistence.{h,m}` — NSUserDefaults-backed account storage (saved accounts, active userId, pending device/distinct ids, force-register flag). Pure Foundation + Chinlan logging.
 - `Hook/AccountObserve.m` — installs the account-switching hooks (`AccountExists`, `ILoginArgs.Create`, `IRegisterUserArgs.Create`, `RunLoginSequenceAsync.MoveNext`, `GetSelfUserProfileAsync.MoveNext`, `RunResetUserDataSequenceAsync`, `RunDeleteAccountSequenceAsync`). Provides `KFNavigateToTitleScene` for the consumer's settings UI to drive `BackToTitleSequence.RunAsync` after a switch.
 - `Hook/GrpcLogging.m` — `HttpMessageInvoker.SendAsync` entry hook that rewrites the `x-user-id` request header to match the pending account when a device-id switch is armed. Prevents the server's `-40004` rejection during account switching.
