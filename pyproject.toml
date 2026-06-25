@@ -1,0 +1,9 @@
+[project]
+name = "kiou-hook"
+version = "0.1.0"
+description = "Shared KIOU binary catalog + reusable Objective-C account/gRPC hooks. Consumed as a submodule by IPA-Patch tweaks."
+requires-python = ">=3.10"
+authors = [{ name = "IPA-Patch contributors" }]
+
+[tool.setuptools.packages.find]
+include = ["recipes*"]
