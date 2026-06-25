@@ -13,6 +13,12 @@
 // Pair-of-truth note: the `enum kiou_kf_hook_id` and `KIOU_KF_SITE_RVA_*`
 // macros mirror `recipes/common.py` HOOK_IDS and the per-version SITES
 // tables. Update both sides together.
+//
+// Hook authors should NOT reference the enum or RVA macros directly. Use
+// the name-based API below (KIOUHookOrig / KIOUHookInstall / KIOUHookSiteAddr)
+// keyed by KIOU_HOOK_NAME_* string constants instead. The enum + RVA macros
+// stay public only because per-tweak ChinlanDispatcher.m needs them to
+// publish the entry slot table and switch on hook_id.
 // ===========================================================================
 
 // ---------------------------------------------------------------------------
@@ -50,6 +56,10 @@
 // the cave's MOVZ W6,#imm so dispatch_one can switch on it. CAVE_ENTRY caves
 // don't dispatch by id, but they still get an enum entry so the bypass index
 // (cave allocation order) matches the enum value.
+//
+// Hook authors: do NOT use these constants in hook bodies. Use
+// KIOU_HOOK_NAME_* + KIOUHookOrig() instead. The enum is published so the
+// per-tweak ChinlanDispatcher.m can switch on hook_id.
 // ---------------------------------------------------------------------------
 enum kiou_kf_hook_id {
     // Entry caves (route through entry slot table)
@@ -91,7 +101,8 @@ enum kiou_kf_entry_slot_id {
 };
 
 // ---------------------------------------------------------------------------
-// Site RVAs — used by JB-flavour MSHookFunction installers.
+// Site RVAs — used by KIOUHookSiteAddr to compute target addresses.
+// Hook authors: don't reference these directly. Use KIOUHookSiteAddr(name).
 // ---------------------------------------------------------------------------
 #define KIOU_KF_SITE_RVA_SET_TARGET_FRAMERATE       0x6B718A4
 #define KIOU_KF_SITE_RVA_GAME_ORCHESTRATOR_IS_AFK   0x594A034
@@ -126,6 +137,67 @@ void KFChinlanPublish(uintptr_t unityBase);
 // UnityFramework base captured at install time. Consumers set this in their
 // Tweak entry point before any KIOU-Hook installer runs.
 extern uintptr_t g_unityBase;
+
+// ===========================================================================
+// Name-based hook API — hook authors use these instead of the enum / RVA
+// macros above.
+// ===========================================================================
+
+// Hook name string constants. Use these as the `name` argument to
+// KIOUHookOrig / KIOUHookInstall / KIOUHookSiteAddr. The string identity
+// (not pointer equality) is what's looked up, so direct literal use also
+// works — the macros exist mainly to catch typos at the call site.
+extern const char KIOU_HOOK_NAME_SET_TARGET_FRAMERATE[];
+extern const char KIOU_HOOK_NAME_NSS_SETHASHSIZE[];
+extern const char KIOU_HOOK_NAME_NSS_SETSKILLEVEL[];
+extern const char KIOU_HOOK_NAME_NSS_SEARCHFULL[];
+extern const char KIOU_HOOK_NAME_ACCOUNT_EXISTS[];
+extern const char KIOU_HOOK_NAME_LOGIN_ARGS_CREATE[];
+extern const char KIOU_HOOK_NAME_REGISTER_USER_ARGS_CREATE[];
+extern const char KIOU_HOOK_NAME_RUN_LOGIN_SEQ_MOVENEXT[];
+extern const char KIOU_HOOK_NAME_GET_SELF_PROFILE_MOVENEXT[];
+extern const char KIOU_HOOK_NAME_HTTPMSGINVOKER_SEND_ASYNC[];
+extern const char KIOU_HOOK_NAME_AI_END[];
+extern const char KIOU_HOOK_NAME_CPUSTREAM_END[];
+extern const char KIOU_HOOK_NAME_LOCAL_END[];
+extern const char KIOU_HOOK_NAME_ONLINE_END[];
+extern const char KIOU_HOOK_NAME_REPLAY_END[];
+extern const char KIOU_HOOK_NAME_BACK_TO_TITLE_RUN_ASYNC[];
+
+// Resolve the orig function pointer for a hook by symbolic name.
+//
+//   - On chinlan ENTRY hooks: returns the cave-bypass entry from
+//     g_inject_entry[lookup_id(name)]. Call this to invoke orig from a
+//     hook body without re-entering the cave.
+//   - On JB: returns the orig pointer stored by a previous KIOUHookInstall
+//     call. Call this to invoke orig from a hook body when MSHookFunction
+//     has redirected the original site.
+//   - For OBSERVER hooks or names not in the catalog: returns NULL.
+void *KIOUHookOrig(const char *hook_name);
+
+// Install a JB hook by symbolic name (no-op on chinlan beyond returning
+// the bypass for caller convenience).
+//
+//   - On JB: resolves site address (unityBase + site_rva), calls
+//     MSHookFunction(site, replacement, &orig), stores `orig` so
+//     KIOUHookOrig(name) returns it, and returns `orig` to the caller for
+//     storage in a static function pointer.
+//   - On chinlan: looks up g_inject_entry[lookup_id(name)] and returns it.
+//     The chinlan dispatcher (per-tweak ChinlanDispatcher.m) is what
+//     actually wires the cave entry slot to `replacement`, so the
+//     `replacement` arg is ignored on chinlan.
+//
+// Returns NULL on unknown name. The caller stores the returned pointer in
+// a static `orig_X` so hook bodies can invoke orig without re-resolving.
+void *KIOUHookInstall(const char *hook_name,
+                       void *replacement,
+                       uintptr_t unityBase);
+
+// Compute the absolute address of a hook site (unityBase + site_rva).
+// Used by consumers that need a raw function pointer rather than going
+// through MSHookFunction — e.g. calling a static method like
+// BackToTitleSequence.RunAsync. Returns 0 on unknown name.
+uintptr_t KIOUHookSiteAddr(const char *hook_name, uintptr_t unityBase);
 
 // ---------------------------------------------------------------------------
 // Shared installer prototypes.
