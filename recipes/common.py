@@ -70,6 +70,25 @@ HOOK_IDS: dict[str, int] = {
     "KIOU_KF_HOOK_KIFU_LOCAL_END":     12,
     "KIOU_KF_HOOK_KIFU_ONLINE_END":    13,
     "KIOU_KF_HOOK_KIFU_REPLAY_END":    14,
+    # KiouEditor CAVE_ENTRY hooks (1.0.1)
+    "KIOU_KF_HOOK_SYNC_ITEM_LIST_MERGE":         15,
+    "KIOU_KF_HOOK_COLLECTION_PRESET_MERGE":      16,
+    "KIOU_KF_HOOK_SELECT_CHAR_ASYNC":            17,
+    "KIOU_KF_HOOK_SELECT_CHAR_REPLY_MERGE":      18,
+    "KIOU_KF_HOOK_MATCHING_PLAYER_MERGE":        19,
+    "KIOU_KF_HOOK_HISTORY_DETAIL_MERGE":         20,
+    "KIOU_KF_HOOK_HISTORY_GET_PREMIUM":          21,
+    "KIOU_KF_HOOK_KIFU_DETAIL_IS_PREMIUM":       22,
+    "KIOU_KF_HOOK_VOICE_PLAYER_SATISFIES":       23,
+    "KIOU_KF_HOOK_VOICE_CELL_GET_IS_LOCKED":     24,
+    "KIOU_KF_HOOK_BSE_CTOR":                     25,
+    "KIOU_KF_HOOK_BSE_ENSURE_INITIALIZED":       26,
+    "KIOU_KF_HOOK_RBSUPPORT_GET_ENABLED":        27,
+    "KIOU_KF_HOOK_RBSUPPORT_GET_DEPTH":          28,
+    "KIOU_KF_HOOK_HOME_UTILITY_PRESENTER_CTOR":  29,
+    "KIOU_KF_HOOK_UIBUTTONBASE_ONPOINTERCLICK":  30,
+    "KIOU_KF_HOOK_TITLE_SCENE_MOVENEXT":         31,
+    "KIOU_KF_HOOK_GAME_ORCHESTRATOR_IS_AFK":     32,
 }
 
 # Entry slot indices — one per CAVE_ENTRY row, must mirror KIOUHook.h.
@@ -84,10 +103,29 @@ ENTRY_SLOT_INDEX: dict[str, int] = {
     "KIOU_KF_HOOK_RUN_LOGIN_SEQ_MOVENEXT":    7,
     "KIOU_KF_HOOK_GET_SELF_PROFILE_MOVENEXT": 8,
     "KIOU_KF_HOOK_HTTPMSGINVOKER_SEND_ASYNC": 9,
+    # KiouEditor CAVE_ENTRY slots (1.0.1)
+    "KIOU_KF_HOOK_SYNC_ITEM_LIST_MERGE":         10,
+    "KIOU_KF_HOOK_COLLECTION_PRESET_MERGE":      11,
+    "KIOU_KF_HOOK_SELECT_CHAR_ASYNC":            12,
+    "KIOU_KF_HOOK_SELECT_CHAR_REPLY_MERGE":      13,
+    "KIOU_KF_HOOK_MATCHING_PLAYER_MERGE":        14,
+    "KIOU_KF_HOOK_HISTORY_DETAIL_MERGE":         15,
+    "KIOU_KF_HOOK_HISTORY_GET_PREMIUM":          16,
+    "KIOU_KF_HOOK_KIFU_DETAIL_IS_PREMIUM":       17,
+    "KIOU_KF_HOOK_VOICE_PLAYER_SATISFIES":       18,
+    "KIOU_KF_HOOK_VOICE_CELL_GET_IS_LOCKED":     19,
+    "KIOU_KF_HOOK_BSE_CTOR":                     20,
+    "KIOU_KF_HOOK_BSE_ENSURE_INITIALIZED":       21,
+    "KIOU_KF_HOOK_RBSUPPORT_GET_ENABLED":        22,
+    "KIOU_KF_HOOK_RBSUPPORT_GET_DEPTH":          23,
+    "KIOU_KF_HOOK_HOME_UTILITY_PRESENTER_CTOR":  24,
+    "KIOU_KF_HOOK_UIBUTTONBASE_ONPOINTERCLICK":  25,
+    "KIOU_KF_HOOK_TITLE_SCENE_MOVENEXT":         26,
+    "KIOU_KF_HOOK_GAME_ORCHESTRATOR_IS_AFK":     27,
 }
 
-ENTRY_SLOT_COUNT    = 10
-ENTRY_SLOT_CAPACITY = 16   # reserved sibling room for future entry hooks
+ENTRY_SLOT_COUNT    = 28
+ENTRY_SLOT_CAPACITY = 32   # reserved sibling room for future entry hooks
 
 # ---------------------------------------------------------------------------
 # Cave payload builders
@@ -204,17 +242,25 @@ def payload_for_site(site, prologue_bytes, hook_id_name, kind,
 # ---------------------------------------------------------------------------
 
 def build_exports(sites, afk_site, afk_orig_8, hook_slot_rva, entry_slot_base_rva):
-    """Build PATCHES, CAVE_PATCHES, and _SITES from per-version data."""
+    """Build PATCHES, CAVE_PATCHES, and _SITES from per-version data.
+
+    ``afk_site`` may be ``None`` (or ``0``) when AFK is handled via
+    ``CAVE_ENTRY`` in ``sites`` rather than an inline patch — KiouEditor
+    on 1.0.1 takes that path. Callers in that mode pass
+    ``afk_site=None, afk_orig_8=""``.
+    """
     from tools.encode import mov_w0_imm_ret
 
-    patches = [
-        (
-            afk_site,
-            bytes.fromhex(afk_orig_8),
-            mov_w0_imm_ret(0),
-            "IsAfkEnabled: return false (MOVZ W0,#0; RET)",
-        ),
-    ]
+    patches = []
+    if afk_site:
+        patches.append(
+            (
+                afk_site,
+                bytes.fromhex(afk_orig_8),
+                mov_w0_imm_ret(0),
+                "IsAfkEnabled: return false (MOVZ W0,#0; RET)",
+            )
+        )
 
     cave_patches = [
         (

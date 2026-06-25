@@ -79,6 +79,27 @@ enum kiou_kf_hook_id {
     KIOU_KF_HOOK_KIFU_LOCAL_END,
     KIOU_KF_HOOK_KIFU_ONLINE_END,
     KIOU_KF_HOOK_KIFU_REPLAY_END,
+    // Entry caves contributed by KiouEditor — 1.0.1-pinned RVAs. All
+    // CAVE_ENTRY. The KF prefix is retained for consistency; treat it as
+    // "KIOU framework" rather than KiouForge-specific.
+    KIOU_KF_HOOK_SYNC_ITEM_LIST_MERGE,
+    KIOU_KF_HOOK_COLLECTION_PRESET_MERGE,
+    KIOU_KF_HOOK_SELECT_CHAR_ASYNC,
+    KIOU_KF_HOOK_SELECT_CHAR_REPLY_MERGE,
+    KIOU_KF_HOOK_MATCHING_PLAYER_MERGE,
+    KIOU_KF_HOOK_HISTORY_DETAIL_MERGE,
+    KIOU_KF_HOOK_HISTORY_GET_PREMIUM,
+    KIOU_KF_HOOK_KIFU_DETAIL_IS_PREMIUM,
+    KIOU_KF_HOOK_VOICE_PLAYER_SATISFIES,
+    KIOU_KF_HOOK_VOICE_CELL_GET_IS_LOCKED,
+    KIOU_KF_HOOK_BSE_CTOR,
+    KIOU_KF_HOOK_BSE_ENSURE_INITIALIZED,
+    KIOU_KF_HOOK_RBSUPPORT_GET_ENABLED,
+    KIOU_KF_HOOK_RBSUPPORT_GET_DEPTH,
+    KIOU_KF_HOOK_HOME_UTILITY_PRESENTER_CTOR,
+    KIOU_KF_HOOK_UIBUTTONBASE_ONPOINTERCLICK,
+    KIOU_KF_HOOK_TITLE_SCENE_MOVENEXT,
+    KIOU_KF_HOOK_GAME_ORCHESTRATOR_IS_AFK,
 
     KIOU_KF_HOOK__COUNT,
 };
@@ -96,6 +117,25 @@ enum kiou_kf_entry_slot_id {
     KIOU_KF_ENTRY_SLOT_RUN_LOGIN_SEQ_MOVENEXT,
     KIOU_KF_ENTRY_SLOT_GET_SELF_PROFILE_MOVENEXT,
     KIOU_KF_ENTRY_SLOT_HTTPMSGINVOKER_SEND_ASYNC,
+    // KiouEditor entry slots (1.0.1).
+    KIOU_KF_ENTRY_SLOT_SYNC_ITEM_LIST_MERGE,
+    KIOU_KF_ENTRY_SLOT_COLLECTION_PRESET_MERGE,
+    KIOU_KF_ENTRY_SLOT_SELECT_CHAR_ASYNC,
+    KIOU_KF_ENTRY_SLOT_SELECT_CHAR_REPLY_MERGE,
+    KIOU_KF_ENTRY_SLOT_MATCHING_PLAYER_MERGE,
+    KIOU_KF_ENTRY_SLOT_HISTORY_DETAIL_MERGE,
+    KIOU_KF_ENTRY_SLOT_HISTORY_GET_PREMIUM,
+    KIOU_KF_ENTRY_SLOT_KIFU_DETAIL_IS_PREMIUM,
+    KIOU_KF_ENTRY_SLOT_VOICE_PLAYER_SATISFIES,
+    KIOU_KF_ENTRY_SLOT_VOICE_CELL_GET_IS_LOCKED,
+    KIOU_KF_ENTRY_SLOT_BSE_CTOR,
+    KIOU_KF_ENTRY_SLOT_BSE_ENSURE_INITIALIZED,
+    KIOU_KF_ENTRY_SLOT_RBSUPPORT_GET_ENABLED,
+    KIOU_KF_ENTRY_SLOT_RBSUPPORT_GET_DEPTH,
+    KIOU_KF_ENTRY_SLOT_HOME_UTILITY_PRESENTER_CTOR,
+    KIOU_KF_ENTRY_SLOT_UIBUTTONBASE_ONPOINTERCLICK,
+    KIOU_KF_ENTRY_SLOT_TITLE_SCENE_MOVENEXT,
+    KIOU_KF_ENTRY_SLOT_GAME_ORCHESTRATOR_IS_AFK,
 
     KIOU_KF_ENTRY_SLOT__COUNT,
 };
@@ -105,7 +145,6 @@ enum kiou_kf_entry_slot_id {
 // Hook authors: don't reference these directly. Use KIOUHookSiteAddr(name).
 // ---------------------------------------------------------------------------
 #define KIOU_KF_SITE_RVA_SET_TARGET_FRAMERATE       0x6B718A4
-#define KIOU_KF_SITE_RVA_GAME_ORCHESTRATOR_IS_AFK   0x594A034
 #define KIOU_KF_SITE_RVA_NSS_SETHASHSIZE            0x5D379DC
 #define KIOU_KF_SITE_RVA_NSS_SETSKILLEVEL           0x5D37968
 #define KIOU_KF_SITE_RVA_NSS_SEARCHFULL             0x5D37A74
@@ -121,6 +160,40 @@ enum kiou_kf_entry_slot_id {
 #define KIOU_KF_SITE_RVA_GET_SELF_PROFILE_MOVENEXT  0x5BB99DC
 #define KIOU_KF_SITE_RVA_HTTPMSGINVOKER_SEND_ASYNC  0x6082AC0
 #define KIOU_KF_SITE_RVA_BACK_TO_TITLE_RUN_ASYNC    0x5CFC394
+
+// --- KiouEditor hook sites (1.0.1 RVAs) ----------------------------------
+// These pin to KIOU 1.0.1 build 11 because KiouEditor is 1.0.1-only. If a
+// future port maps the same semantic site to a 1.0.2 RVA, the macros above
+// will need version-aware dispatch — for now KiouForge (1.0.2) callers
+// don't reference these.
+#define KIOU_KF_SITE_RVA_SYNC_ITEM_LIST_MERGE          0x5C37034
+#define KIOU_KF_SITE_RVA_COLLECTION_PRESET_MERGE       0x5C4065C
+#define KIOU_KF_SITE_RVA_SELECT_CHAR_ASYNC             0x5CA7C90
+#define KIOU_KF_SITE_RVA_SELECT_CHAR_REPLY_MERGE       0x5C26DCC
+#define KIOU_KF_SITE_RVA_MATCHING_PLAYER_MERGE         0x5B4CAEC
+#define KIOU_KF_SITE_RVA_HISTORY_DETAIL_MERGE          0x5C01328
+#define KIOU_KF_SITE_RVA_HISTORY_GET_PREMIUM           0x5C00D88
+#define KIOU_KF_SITE_RVA_KIFU_DETAIL_IS_PREMIUM        0x585B25C
+#define KIOU_KF_SITE_RVA_VOICE_PLAYER_SATISFIES        0x582B88C
+#define KIOU_KF_SITE_RVA_VOICE_CELL_GET_IS_LOCKED      0x584ADC0
+#define KIOU_KF_SITE_RVA_BSE_CTOR                      0x597A448
+#define KIOU_KF_SITE_RVA_BSE_ENSURE_INITIALIZED        0x597BAFC
+#define KIOU_KF_SITE_RVA_RBSUPPORT_GET_ENABLED         0x593E630
+#define KIOU_KF_SITE_RVA_RBSUPPORT_GET_DEPTH           0x593E650
+#define KIOU_KF_SITE_RVA_HOME_UTILITY_PRESENTER_CTOR   0x5A9F298
+#define KIOU_KF_SITE_RVA_UIBUTTONBASE_ONPOINTERCLICK   0x5DD1E08
+#define KIOU_KF_SITE_RVA_TITLE_SCENE_MOVENEXT          0x5DCC728
+#define KIOU_KF_SITE_RVA_GAME_ORCHESTRATOR_IS_AFK      0x59455D4
+
+// --- Direct-ABI helper RVAs (1.0.1) --------------------------------------
+// Not hook sites; KiouEditor bodies look these up via KIOUHookSiteAddr to
+// call the underlying functions directly. NSS_SETHASHSIZE_DIRECT is the
+// 1.0.1 RVA of NativeSyncSession.SetHashSize — distinct from the
+// NSS_SETHASHSIZE hook above whose macro carries the 1.0.2 RVA used by
+// KiouForge. Catalog rows for these have hook_id = -1.
+#define KIOU_KF_SITE_RVA_NSS_SETHASHSIZE_DIRECT        0x5D320E0
+#define KIOU_KF_SITE_RVA_GAMEOBJECT_GETCOMPONENT       0x6BCA6AC
+#define KIOU_KF_SITE_RVA_RTU_WORLDTOSCREENPOINT        0x6F20040
 
 // ---------------------------------------------------------------------------
 // Dispatcher state — defined by the consumer's ChinlanDispatcher.m.
@@ -163,6 +236,29 @@ extern const char KIOU_HOOK_NAME_LOCAL_END[];
 extern const char KIOU_HOOK_NAME_ONLINE_END[];
 extern const char KIOU_HOOK_NAME_REPLAY_END[];
 extern const char KIOU_HOOK_NAME_BACK_TO_TITLE_RUN_ASYNC[];
+// KiouEditor hook sites (1.0.1).
+extern const char KIOU_HOOK_NAME_SYNC_ITEM_LIST_MERGE[];
+extern const char KIOU_HOOK_NAME_COLLECTION_PRESET_MERGE[];
+extern const char KIOU_HOOK_NAME_SELECT_CHAR_ASYNC[];
+extern const char KIOU_HOOK_NAME_SELECT_CHAR_REPLY_MERGE[];
+extern const char KIOU_HOOK_NAME_MATCHING_PLAYER_MERGE[];
+extern const char KIOU_HOOK_NAME_HISTORY_DETAIL_MERGE[];
+extern const char KIOU_HOOK_NAME_HISTORY_GET_PREMIUM[];
+extern const char KIOU_HOOK_NAME_KIFU_DETAIL_IS_PREMIUM[];
+extern const char KIOU_HOOK_NAME_VOICE_PLAYER_SATISFIES[];
+extern const char KIOU_HOOK_NAME_VOICE_CELL_GET_IS_LOCKED[];
+extern const char KIOU_HOOK_NAME_BSE_CTOR[];
+extern const char KIOU_HOOK_NAME_BSE_ENSURE_INITIALIZED[];
+extern const char KIOU_HOOK_NAME_RBSUPPORT_GET_ENABLED[];
+extern const char KIOU_HOOK_NAME_RBSUPPORT_GET_DEPTH[];
+extern const char KIOU_HOOK_NAME_HOME_UTILITY_PRESENTER_CTOR[];
+extern const char KIOU_HOOK_NAME_UIBUTTONBASE_ONPOINTERCLICK[];
+extern const char KIOU_HOOK_NAME_TITLE_SCENE_MOVENEXT[];
+extern const char KIOU_HOOK_NAME_GAME_ORCHESTRATOR_IS_AFK[];
+// Direct-ABI helper lookups (KiouEditor, 1.0.1). hook_id = -1 in the catalog.
+extern const char KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT[];
+extern const char KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT[];
+extern const char KIOU_HOOK_NAME_RTU_WORLDTOSCREENPOINT[];
 
 // Resolve the orig function pointer for a hook by symbolic name.
 //
