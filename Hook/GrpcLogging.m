@@ -31,11 +31,16 @@
 
 // ---------------------------------------------------------------------------
 // Function pointer types
+//
+// IL2CPP instance methods are called with a trailing MethodInfo* in x3 (or
+// the next available arg register).  Omitting it leaves x3 polluted, and
+// orig crashes the moment it dereferences MethodInfo.  Keep these signatures
+// in lockstep with AnalysisTune.m's `..., void *mi` convention.
 // ---------------------------------------------------------------------------
-typedef bool  (*HttpHeadersTryAdd_t)(void *headers, void *name, void *value);
-typedef bool  (*HttpHeadersRemove_t)(void *headers, void *name);
+typedef bool  (*HttpHeadersTryAdd_t)(void *headers, void *name, void *value, void *mi);
+typedef bool  (*HttpHeadersRemove_t)(void *headers, void *name, void *mi);
 typedef void *(*GrpcIl2CppStringNew_t)(const char *utf8);
-typedef void *(*GenericSendAsync_t)(void *self, void *request, void *ct);
+typedef void *(*GenericSendAsync_t)(void *self, void *request, void *ct, void *mi);
 
 static HttpHeadersTryAdd_t   g_HttpHeadersTryAdd   = NULL;
 static HttpHeadersRemove_t   g_HttpHeadersRemove   = NULL;
@@ -71,19 +76,35 @@ static void swapUserIdHeader(void *request) {
     void *valueStr = g_GrpcStringNew(targetUserId.UTF8String);
     if (!nameStr || !valueStr) return;
     @try {
-        g_HttpHeadersRemove(headers, nameStr);
-        g_HttpHeadersTryAdd(headers, nameStr, valueStr);
+        g_HttpHeadersRemove(headers, nameStr, NULL);
+        g_HttpHeadersTryAdd(headers, nameStr, valueStr, NULL);
         IPALog([NSString stringWithFormat:
                   @"[GRPC] x-user-id swapped → %@", targetUserId]);
     } @catch (NSException *e) {
         IPALog([NSString stringWithFormat:@"[GRPC] x-user-id swap threw: %@", e]);
+    } @catch (id e) {
+        IPALog([NSString stringWithFormat:
+                  @"[GRPC] x-user-id swap threw (non-NSException): %@", e]);
     }
 }
 
-void *KFHookHttpMsgInvokerSendAsync(void *self, void *request, void *ct) {
-    swapUserIdHeader(request);
+// IL2CPP calls this with (self, request, ct, MethodInfo*) — the trailing mi
+// must be forwarded to orig or orig will dereference garbage in x3.  The
+// outer @try/@catch guarantees orig SendAsync is always invoked, even when
+// the header swap blows up, so login can proceed (with the stale x-user-id)
+// instead of the whole process aborting.
+void *KFHookHttpMsgInvokerSendAsync(void *self, void *request, void *ct, void *mi) {
+    @try {
+        swapUserIdHeader(request);
+    } @catch (NSException *e) {
+        IPALog([NSString stringWithFormat:
+                  @"[GRPC] swapUserIdHeader escaped (NSException): %@", e]);
+    } @catch (id e) {
+        IPALog([NSString stringWithFormat:
+                  @"[GRPC] swapUserIdHeader escaped (id): %@", e]);
+    }
     return s_origHttpMsgInvokerSendAsync
-        ? s_origHttpMsgInvokerSendAsync(self, request, ct)
+        ? s_origHttpMsgInvokerSendAsync(self, request, ct, mi)
         : NULL;
 }
 
