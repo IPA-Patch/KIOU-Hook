@@ -37,7 +37,7 @@ SITES = [
     (0x5D3206C, "ff0301d1", "KIOU_HOOK_ID_NSS_SETSKILLEVEL",         CAVE_ENTRY, "NativeSyncSession.SetSkillLevel"),
     (0x5D32178, "ffc305d1", "KIOU_HOOK_ID_NSS_SEARCHFULL",           CAVE_ENTRY, "NativeSyncSession.SearchFull"),
 
-    # --- Observer caves (CAVE_OBSERVER): IMatchMode.OnMatchEndAsync × 5 ---
+    # --- Observer caves (CAVE_OBSERVER): IMatchMode.OnMatchEndAsync x 5 ---
     (0x59E5958, "f657bda9", "KIOU_HOOK_ID_KIFU_AI_END",        CAVE_OBSERVER, "AIMatchMode.OnMatchEndAsync"),
     (0x59EC818, "ff8301d1", "KIOU_HOOK_ID_KIFU_CPUSTREAM_END", CAVE_OBSERVER, "CPUStreamMode.OnMatchEndAsync"),
     (0x59FF8F8, "f44fbea9", "KIOU_HOOK_ID_KIFU_LOCAL_END",     CAVE_OBSERVER, "LocalPvPMode.OnMatchEndAsync"),
