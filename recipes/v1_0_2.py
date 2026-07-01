@@ -8,7 +8,14 @@ from recipes.common import CAVE_ENTRY, CAVE_OBSERVER
 BUILD = 12
 
 # Cave payload region (zero-fill tail of UnityFramework __TEXT).
-CAVE_REGION         = (0x826F5E8, 0x8274000)
+#
+# Previously started at 0x826F5E8, but 34 caves x 84 bytes (2,856 B) grew
+# past a residual __oslogstring block that lives at 0x826FFF8..0x8270020
+# (`%{public}s`, `[%{public}@] `, `%{public}@\0` fragments). The
+# verify-before-write guard in tools.patch_macho rightly flagged this as
+# not-zero-fill. Move the region start past the block; KiouEngineBridge
+# PR #40 already validated 0x8270040 as the tail-of-__oslogstring border.
+CAVE_REGION         = (0x8270040, 0x8274000)
 
 # Observer dispatcher slot — chinlan caves load this single 8-byte pointer.
 HOOK_SLOT_RVA       = 0x8F90C80
