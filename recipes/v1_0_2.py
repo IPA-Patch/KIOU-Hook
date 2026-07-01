@@ -44,5 +44,11 @@ SITES = [
     (0x5A046B4, "f44fbea9", "KIOU_HOOK_ID_KIFU_LOCAL_END",     CAVE_OBSERVER, "LocalPvPMode.OnMatchEndAsync"),
     (0x5A06158, "ff8301d1", "KIOU_HOOK_ID_KIFU_ONLINE_END",    CAVE_OBSERVER, "OnlinePvPMode.OnMatchEndAsync"),
     (0x5A30320, "f85fbca9", "KIOU_HOOK_ID_KIFU_REPLAY_END",    CAVE_OBSERVER, "RecordReplayMode.OnMatchEndAsync"),
+
+    # --- Entry cave (CAVE_ENTRY): HeaderProvider.SetOrUpdateHeader ---
+    # Upstream site for x-user-id swap on account switch. Avoids the
+    # HttpMessageInvoker.SendAsync / Yaha borrow path that crashes when
+    # the request or HttpHeaders internal dictionary is touched.
+    (0x5BD9EE8, "f657bda9", "KIOU_HOOK_ID_HEADER_PROVIDER_SET_OR_UPDATE_HEADER", CAVE_ENTRY, "Project.Network.HeaderProvider.SetOrUpdateHeader"),
 ]
 # fmt: on
