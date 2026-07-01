@@ -11,14 +11,32 @@ import importlib
 import os
 
 from recipes.common import (
-    TARGET_BASENAME,
     DYLIB_PATH,
-    PLIST_KEYS,
-    ENTRY_SLOT_COUNT,
     ENTRY_SLOT_CAPACITY,
+    ENTRY_SLOT_COUNT,
     ENTRY_SLOT_INDEX,
+    PLIST_KEYS,
+    TARGET_BASENAME,
     build_exports,
 )
+
+__all__ = [
+    "CAVE_PATCHES",
+    "CAVE_REGION",
+    "DYLIB_PATH",
+    "ENTRY_SLOT_BASE_RVA",
+    "ENTRY_SLOT_CAPACITY",
+    "ENTRY_SLOT_COUNT",
+    "ENTRY_SLOT_INDEX",
+    "HOOK_SLOT_RVA",
+    "INJECT_ENTRY_TABLE_RVA",
+    "PATCHES",
+    "PLIST_KEYS",
+    "PROBED_HOOK_SLOT_RVA",
+    "PROBED_INJECT_ENTRY_TABLE_RVA",
+    "TARGET_BASENAME",
+    "build_exports",
+]
 
 _VERSIONS: dict[str, str | None] = {
     "1.0.1": "recipes.v1_0_1",
