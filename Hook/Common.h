@@ -104,6 +104,14 @@ void KIOUEditorReconButtonImage(void *uiButton, const char *tag);
 // title sprite has not been captured yet.
 void KIOUEditorApplyTitleSpriteToClone(void *cloneGo);
 
+// UIKit-side settings presenter. Called from Hook/FriendUnhide.m's
+// OnPointerClick body to show the tweak's settings when the (unhidden +
+// remapped) friend button is tapped. The consumer tweak (KiouEditor)
+// defines this in its Hook_SettingsUI.m; KIOU-Hook ships a weak no-op
+// stub so consumers that pull in FriendUnhide.m without wiring the
+// UIKit surface still link cleanly.
+void KIOUEditorPresentSettings(void);
+
 // ---------------------------------------------------------------------------
 // Runtime feature toggles. Each hook body gates its tamper logic on its
 // own flag; flipping a flag off causes the hook to fall through to orig()
@@ -164,5 +172,4 @@ void KIOUEditorInstallSelectCharacterHook(uintptr_t unityBase);
 void KIOUEditorInstallSyncItemListHook(uintptr_t unityBase);
 void KIOUEditorInstallVersionHook(uintptr_t unityBase);
 void KIOUEditorInstallVoiceUnlockHook(uintptr_t unityBase);
-// FriendUnhide installer lands with Hook/FriendUnhide.m in a follow-up PR:
-//   void KIOUEditorInstallFriendUnhideHook(uintptr_t unityBase);
+void KIOUEditorInstallFriendUnhideHook(uintptr_t unityBase);
