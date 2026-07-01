@@ -15,7 +15,10 @@ from recipes.common import CAVE_ENTRY, CAVE_OBSERVER
 BUILD = 11
 
 CAVE_REGION         = (0x8268024, 0x826C000)
-HOOK_SLOT_RVA       = 0x8F90C80
+# See v1_0_2 for the rationale: 0x8F90C80 (__DATA.__bss) is unstable —
+# UnityRuntime overwrites it after KIOUChinlanPublish. Move to __common
+# right after the entry-slot table capacity, where publishes survive.
+HOOK_SLOT_RVA       = 0x091E92B8
 PROBED_HOOK_SLOT_RVA = HOOK_SLOT_RVA
 
 INJECT_ENTRY_TABLE_RVA        = 0x8F90C00
