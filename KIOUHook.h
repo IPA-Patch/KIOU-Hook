@@ -210,7 +210,7 @@ enum kiou_hook_slot_id {
 extern void * volatile g_inject_entry[KIOU_HOOK_ID__COUNT];
 #endif
 
-void KFChinlanPublish(uintptr_t unityBase);
+void KIOUChinlanPublish(uintptr_t unityBase);
 
 // UnityFramework base captured at install time. Consumers set this in their
 // Tweak entry point before any KIOU-Hook installer runs.
@@ -304,17 +304,17 @@ uintptr_t KIOUHookSiteAddr(const char *hook_name, uintptr_t unityBase);
 // ---------------------------------------------------------------------------
 // Shared installer prototypes.
 // ---------------------------------------------------------------------------
-void KFInstallAccountObserveHook(uintptr_t unityBase);
-void KFInstallGrpcLoggingHook(uintptr_t unityBase);
+void KIOUInstallAccountObserveHook(uintptr_t unityBase);
+void KIOUInstallGrpcLoggingHook(uintptr_t unityBase);
 
 // Drive BackToTitleSequence.RunAsync — called by consumer settings UIs after
 // the user confirms an account switch so KIOU re-runs AccountExists → Login
 // with the pending_device_id substitution in effect (no app relaunch needed).
-void KFNavigateToTitleScene(void);
+void KIOUNavigateToTitleScene(void);
 
 // ---------------------------------------------------------------------------
 // UniTask ABI shape — 16-byte struct (IUniTaskSource* + short token); on
 // arm64 it returns in {x0, x1}. Hook bodies that match a UniTask-returning
 // site declare their function pointer using this struct.
 // ---------------------------------------------------------------------------
-typedef struct { void *r0; void *r1; } KFUniTaskRet;
+typedef struct { void *r0; void *r1; } KIOUUniTaskRet;

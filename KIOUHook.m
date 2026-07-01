@@ -142,7 +142,7 @@ void *KIOUHookInstall(const char *name, void *replacement, uintptr_t unityBase) 
     const KIOUHookEntry *e = findEntry(name);
     if (!e) return NULL;
 #if IPA_CHINLAN
-    // chinlan: caves are wired by ChinlanDispatcher's KFChinlanPublish.
+    // chinlan: caves are wired by ChinlanDispatcher's KIOUChinlanPublish.
     // The caller passes `replacement` for symmetry but we ignore it; we
     // just return the bypass entry so the caller can store it as their
     // orig pointer and call it from the hook body.
