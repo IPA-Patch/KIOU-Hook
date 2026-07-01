@@ -7,112 +7,115 @@
 // ===========================================================================
 // Hook/GrpcLogging.m — swap x-user-id gRPC header on account switch.
 //
-// KIOU's gRPC stack passes an x-user-id request header that identifies the
-// logged-in user.  When KFSwitchAccount arms pending_device_id, LoginArgs
-// sends a different deviceId to the server, but the header still names the
-// previous user — the server rejects with -40004.
+// The swap runs at Project.Network.HeaderProvider.SetOrUpdateHeader, which
+// is the upstream managed-only site where the app registers its request
+// headers (well before HttpMessageInvoker.SendAsync hands the request to
+// Cysharp Yaha's Rust FFI). Doing the swap there avoids the crash class
+// where touching the request / self+0x10 / HttpHeaders internal dictionary
+// after the SendAsync boundary blows up inside HttpHeaders.GetEnumerator
+// on a 0x20025xxx truncated-32-bit pointer.
 //
-// Fix: hook HttpMessageInvoker.SendAsync (the virtual base that every gRPC
-// call routes through). Rewrite the header to match the target account
-// before calling orig.
+// The HttpMessageInvoker.SendAsync hook is kept as a bare passthrough so
+// its cave / entry slot stays wired — useful for future cave-integrity
+// bisection — but the body itself does nothing beyond forwarding to orig.
 //
-// Hook site (resolved by name at install time):
+// Hook sites (resolved by name at install time):
+//   Project.Network.HeaderProvider.SetOrUpdateHeader
 //   HttpMessageInvoker.SendAsync
-//
-// Helper RVAs (assumed stable enough to stay local for now — promote to
-// catalog if a second consumer needs them):
 // ===========================================================================
 
-#define RVA_HTTPHEADERS_TRYADD   0x608E9B8
-#define RVA_HTTPHEADERS_REMOVE   0x608EE70
-
-// HttpRequestMessage field offset (dump.cs line 1540968).
-#define OFF_REQ_HEADERS  0x10
-
-// ---------------------------------------------------------------------------
-// Function pointer types
-//
-// IL2CPP instance methods are called with a trailing MethodInfo* in x3 (or
-// the next available arg register).  Omitting it leaves x3 polluted, and
-// orig crashes the moment it dereferences MethodInfo.  Keep these signatures
-// in lockstep with AnalysisTune.m's `..., void *mi` convention.
-// ---------------------------------------------------------------------------
-typedef bool  (*HttpHeadersTryAdd_t)(void *headers, void *name, void *value, void *mi);
-typedef bool  (*HttpHeadersRemove_t)(void *headers, void *name, void *mi);
+// il2cpp string helper resolved via dlsym.
 typedef void *(*GrpcIl2CppStringNew_t)(const char *utf8);
+static GrpcIl2CppStringNew_t g_GrpcStringNew = NULL;
+
+// Orig cave-bypasses.
 typedef void *(*GenericSendAsync_t)(void *self, void *request, void *ct, void *mi);
-
-static HttpHeadersTryAdd_t   g_HttpHeadersTryAdd   = NULL;
-static HttpHeadersRemove_t   g_HttpHeadersRemove   = NULL;
-static GrpcIl2CppStringNew_t g_GrpcStringNew       = NULL;
-static GenericSendAsync_t    s_origHttpMsgInvokerSendAsync = NULL;
+typedef void  (*HeaderProviderSetOrUpdate_t)(void *self, void *keyStr, void *valueStr, void *mi);
+static GenericSendAsync_t          s_origHttpMsgInvokerSendAsync    = NULL;
+static HeaderProviderSetOrUpdate_t s_origHeaderProviderSetOrUpdate  = NULL;
 
 // ---------------------------------------------------------------------------
-// Resolve the target userId for the pending device switch.
-// Returns nil if no switch is armed.
-//
-// We trust active_user_id (set by Settings UI when the user picks an
-// account) rather than reverse-mapping deviceId -> userId via the saved
-// accounts list — the latter falls over when the same uuid is shared by
-// multiple userIds.
+// Resolve the target userId for the pending device switch. Returns nil when
+// no switch is armed, or when the pending deviceId is a fresh UUID (Register
+// flow) that isn't in the saved-accounts catalog — in that case the server
+// is expected to see the previous (empty) x-user-id.
 // ---------------------------------------------------------------------------
+static bool pendingDeviceIsSavedAccount(NSString *pending) {
+    if (pending.length == 0) return false;
+    for (NSDictionary *acc in KFListAccounts()) {
+        id uuid = acc[@"uuid"];
+        if ([uuid isKindOfClass:[NSString class]] &&
+            [(NSString *)uuid isEqualToString:pending]) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static NSString *targetUserIdForPendingDevice(void) {
-    if (KFPendingDeviceId().length == 0) return nil;
+    NSString *pending = KFPendingDeviceId();
+    if (pending.length == 0) return nil;
+    if (!pendingDeviceIsSavedAccount(pending)) return nil;
     return KFActiveAccountUserId();
 }
 
-// ---------------------------------------------------------------------------
-// Swap x-user-id header to the target account's userId.
-// No-op when no switch is armed or helpers are not yet resolved.
-// ---------------------------------------------------------------------------
-static void swapUserIdHeader(void *request) {
-    if (!request || !g_HttpHeadersTryAdd || !g_HttpHeadersRemove ||
-        !g_GrpcStringNew) return;
-    NSString *targetUserId = targetUserIdForPendingDevice();
-    if (targetUserId.length == 0) return;
-    void *headers = readPtr(request, OFF_REQ_HEADERS);
-    if (!headers) return;
-    void *nameStr  = g_GrpcStringNew("x-user-id");
-    void *valueStr = g_GrpcStringNew(targetUserId.UTF8String);
-    if (!nameStr || !valueStr) return;
+// il2cpp string reader — mirrors readIl2CppStr in AccountObserve.m. Kept
+// local to avoid pulling in an extra shared header for one caller; if a
+// third consumer appears, promote this to a shared util.
+static NSString *readIl2CppStrLocal(void *strObj) {
+    if (!strObj) return nil;
     @try {
-        g_HttpHeadersRemove(headers, nameStr, NULL);
-        g_HttpHeadersTryAdd(headers, nameStr, valueStr, NULL);
-        IPALog([NSString stringWithFormat:
-                  @"[GRPC] x-user-id swapped → %@", targetUserId]);
+        int32_t len = readI32(strObj, 0x10);
+        if (len <= 0 || len > 4096) return nil;
+        const uint16_t *chars = (const uint16_t *)((uint8_t *)strObj + 0x14);
+        return [NSString stringWithCharacters:chars length:(NSUInteger)len];
     } @catch (NSException *e) {
-        IPALog([NSString stringWithFormat:@"[GRPC] x-user-id swap threw: %@", e]);
+        (void)e; return nil;
     } @catch (id e) {
-        IPALog([NSString stringWithFormat:
-                  @"[GRPC] x-user-id swap threw (non-NSException): %@", e]);
+        (void)e; return nil;
     }
 }
 
-// IL2CPP calls this with (self, request, ct, MethodInfo*) — the trailing mi
-// must be forwarded to orig or orig will dereference garbage in x3.  The
-// outer @try/@catch guarantees orig SendAsync is always invoked, even when
-// the header swap blows up, so login can proceed (with the stale x-user-id)
-// instead of the whole process aborting.
-void *KFHookHttpMsgInvokerSendAsync(void *self, void *request, void *ct, void *mi) {
-    @try {
-        swapUserIdHeader(request);
-    } @catch (NSException *e) {
-        IPALog([NSString stringWithFormat:
-                  @"[GRPC] swapUserIdHeader escaped (NSException): %@", e]);
-    } @catch (id e) {
-        IPALog([NSString stringWithFormat:
-                  @"[GRPC] swapUserIdHeader escaped (id): %@", e]);
+// ---------------------------------------------------------------------------
+// Project.Network.HeaderProvider.SetOrUpdateHeader(string key, string value)
+// Managed-only signature (self + 2 il2cpp strings + MethodInfo*) — no HTTP
+// / Yaha types anywhere, so this hook cannot trip the SendAsync-borrow
+// crash pattern.
+//
+// When key == "x-user-id" and an account switch is armed, we replace the
+// value argument with a freshly-allocated il2cpp string carrying the
+// target account's userId. Otherwise pass through untouched.
+// ---------------------------------------------------------------------------
+void KFHookHeaderProviderSetOrUpdate(void *self, void *keyStr, void *valueStr, void *mi) {
+    NSString *key = readIl2CppStrLocal(keyStr);
+    if ([key isEqualToString:@"x-user-id"]) {
+        NSString *target = targetUserIdForPendingDevice();
+        if (target.length > 0 && g_GrpcStringNew) {
+            void *newValue = g_GrpcStringNew(target.UTF8String);
+            if (newValue) {
+                valueStr = newValue;
+                IPALog([NSString stringWithFormat:
+                          @"[HEADER] x-user-id swapped → %@", target]);
+            }
+        }
     }
+    if (s_origHeaderProviderSetOrUpdate) {
+        s_origHeaderProviderSetOrUpdate(self, keyStr, valueStr, mi);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// HttpMessageInvoker.SendAsync — bare passthrough. See file header for why
+// we don't touch request/self here.
+// ---------------------------------------------------------------------------
+void *KFHookHttpMsgInvokerSendAsync(void *self, void *request, void *ct, void *mi) {
     return s_origHttpMsgInvokerSendAsync
         ? s_origHttpMsgInvokerSendAsync(self, request, ct, mi)
         : NULL;
 }
 
 void KFInstallGrpcLoggingHook(uintptr_t unityBase) {
-    g_HttpHeadersTryAdd =
-        (HttpHeadersTryAdd_t)(unityBase + RVA_HTTPHEADERS_TRYADD);
-    g_HttpHeadersRemove =
-        (HttpHeadersRemove_t)(unityBase + RVA_HTTPHEADERS_REMOVE);
+    (void)unityBase;
     if (!g_GrpcStringNew)
         g_GrpcStringNew =
             (GrpcIl2CppStringNew_t)dlsym(RTLD_DEFAULT, "il2cpp_string_new");
@@ -121,8 +124,13 @@ void KFInstallGrpcLoggingHook(uintptr_t unityBase) {
         KIOUHookInstall(KIOU_HOOK_NAME_HTTPMSGINVOKER_SEND_ASYNC,
                          (void *)KFHookHttpMsgInvokerSendAsync, unityBase);
 
+    s_origHeaderProviderSetOrUpdate = (HeaderProviderSetOrUpdate_t)
+        KIOUHookInstall(KIOU_HOOK_NAME_HEADER_PROVIDER_SET_OR_UPDATE_HEADER,
+                         (void *)KFHookHeaderProviderSetOrUpdate, unityBase);
+
     IPALog([NSString stringWithFormat:
-              @"[GRPC] hook resolved: orig=%p tryAdd=%p remove=%p strNew=%p",
-              s_origHttpMsgInvokerSendAsync, g_HttpHeadersTryAdd,
-              g_HttpHeadersRemove, g_GrpcStringNew]);
+              @"[GRPC] hook resolved: origSendAsync=%p origSetOrUpdate=%p strNew=%p",
+              s_origHttpMsgInvokerSendAsync,
+              s_origHeaderProviderSetOrUpdate,
+              g_GrpcStringNew]);
 }

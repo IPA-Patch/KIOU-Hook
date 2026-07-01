@@ -79,6 +79,8 @@ enum kiou_hook_id {
     KIOU_HOOK_ID_KIFU_LOCAL_END,
     KIOU_HOOK_ID_KIFU_ONLINE_END,
     KIOU_HOOK_ID_KIFU_REPLAY_END,
+    // Additional entry caves.
+    KIOU_HOOK_ID_HEADER_PROVIDER_SET_OR_UPDATE_HEADER,
     // Entry caves contributed by KiouEditor — 1.0.1-pinned RVAs. All
     // CAVE_ENTRY. The KF prefix is retained for consistency; treat it as
     // "KIOU framework" rather than KiouForge-specific.
@@ -117,6 +119,8 @@ enum kiou_hook_slot_id {
     KIOU_HOOK_SLOT_RUN_LOGIN_SEQ_MOVENEXT,
     KIOU_HOOK_SLOT_GET_SELF_PROFILE_MOVENEXT,
     KIOU_HOOK_SLOT_HTTPMSGINVOKER_SEND_ASYNC,
+    // Additional entry slots.
+    KIOU_HOOK_SLOT_HEADER_PROVIDER_SET_OR_UPDATE_HEADER,
     // KiouEditor entry slots (1.0.1).
     KIOU_HOOK_SLOT_SYNC_ITEM_LIST_MERGE,
     KIOU_HOOK_SLOT_COLLECTION_PRESET_MERGE,
@@ -160,6 +164,7 @@ enum kiou_hook_slot_id {
 #define KIOU_HOOK_RVA_GET_SELF_PROFILE_MOVENEXT  0x5BB99DC
 #define KIOU_HOOK_RVA_HTTPMSGINVOKER_SEND_ASYNC  0x6082AC0
 #define KIOU_HOOK_RVA_BACK_TO_TITLE_RUN_ASYNC    0x5CFC394
+#define KIOU_HOOK_RVA_HEADER_PROVIDER_SET_OR_UPDATE_HEADER  0x5BD9EE8
 
 // --- KiouEditor hook sites (1.0.1 RVAs) ----------------------------------
 // These pin to KIOU 1.0.1 build 11 because KiouEditor is 1.0.1-only. If a
@@ -236,6 +241,7 @@ extern const char KIOU_HOOK_NAME_LOCAL_END[];
 extern const char KIOU_HOOK_NAME_ONLINE_END[];
 extern const char KIOU_HOOK_NAME_REPLAY_END[];
 extern const char KIOU_HOOK_NAME_BACK_TO_TITLE_RUN_ASYNC[];
+extern const char KIOU_HOOK_NAME_HEADER_PROVIDER_SET_OR_UPDATE_HEADER[];
 // KiouEditor hook sites (1.0.1).
 extern const char KIOU_HOOK_NAME_SYNC_ITEM_LIST_MERGE[];
 extern const char KIOU_HOOK_NAME_COLLECTION_PRESET_MERGE[];
