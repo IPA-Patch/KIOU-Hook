@@ -161,7 +161,7 @@ void *KIOUHookInstall(const char *name, void *replacement, uintptr_t unityBase) 
 }
 
 // ---------------------------------------------------------------------------
-// KIOUAfkDisableAlwaysFalseInstall — publishes an unconditional
+// KIOUInstallAfkSuppressHook — publishes an unconditional
 // GameOrchestrator.IsAfkEnabled -> false stub into the AFK cave slot.
 //
 // This is the drop-in replacement for the retired
@@ -178,7 +178,7 @@ static bool kiou_afk_always_false(void *self) {
     return false;
 }
 
-void KIOUAfkDisableAlwaysFalseInstall(uintptr_t unityBase) {
+void KIOUInstallAfkSuppressHook(uintptr_t unityBase) {
 #if IPA_CHINLAN
     // KIOUHookInstall is a no-op for slot publishing on chinlan (it just
     // returns the bypass entry for callers that need it), so we have to

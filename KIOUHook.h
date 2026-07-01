@@ -324,7 +324,7 @@ void KIOUInstallGrpcLoggingHook(uintptr_t unityBase);
 // CAVE_ENTRY (v1_0_1 and later v1_0_2) can call this once at
 // startup and be done. See Hook/AfkDisable.m for the
 // feature-flag-gated variant (KIOUEditorInstallAfkDisableHook).
-void KIOUAfkDisableAlwaysFalseInstall(uintptr_t unityBase);
+void KIOUInstallAfkSuppressHook(uintptr_t unityBase);
 
 // Drive BackToTitleSequence.RunAsync — called by consumer settings UIs after
 // the user confirms an account switch so KIOU re-runs AccountExists → Login
