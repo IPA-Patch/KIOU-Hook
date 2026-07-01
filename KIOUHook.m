@@ -179,6 +179,18 @@ static bool kiou_afk_always_false(void *self) {
 }
 
 void KIOUAfkDisableAlwaysFalseInstall(uintptr_t unityBase) {
+#if IPA_CHINLAN
+    // KIOUHookInstall is a no-op for slot publishing on chinlan (it just
+    // returns the bypass entry for callers that need it), so we have to
+    // write the entry slot directly. Without this write the AFK cave
+    // would BLR through a NULL entrySlots[GAME_ORCHESTRATOR_IS_AFK] and
+    // crash on the first IsAfkEnabled call.
+    void * volatile *entrySlots =
+        (void * volatile *)(unityBase + KIOU_HOOK_ENTRY_SLOT_BASE_RVA);
+    entrySlots[KIOU_HOOK_SLOT_GAME_ORCHESTRATOR_IS_AFK] =
+        (void *)kiou_afk_always_false;
+#else
     KIOUHookInstall(KIOU_HOOK_NAME_GAME_ORCHESTRATOR_IS_AFK,
                     (void *)kiou_afk_always_false, unityBase);
+#endif
 }
