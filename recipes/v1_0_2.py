@@ -11,7 +11,11 @@ BUILD = 12
 CAVE_REGION         = (0x826F5E8, 0x8274000)
 
 # Observer dispatcher slot — chinlan caves load this single 8-byte pointer.
-HOOK_SLOT_RVA       = 0x8F90C80
+# Sits just past the entry-slot table inside __DATA.__common. The old
+# 0x8F90C80 landed in __DATA.__bss, which il2cpp/UnityRuntime overwrites
+# during lazy init (verified crash: cave BLR X16 jumped to garbage after
+# publish). __common survives publish — entry slots (0x091E91B8..) do.
+HOOK_SLOT_RVA       = 0x091E92B8
 PROBED_HOOK_SLOT_RVA = HOOK_SLOT_RVA
 
 # Entry-cave slot table — ENTRY_SLOT_BASE_RVA + idx*8 holds each hook fn ptr.

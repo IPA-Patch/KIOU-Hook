@@ -40,7 +40,15 @@
 
 // Single observer-dispatcher slot. Every CAVE_OBSERVER cave loads this
 // pointer, BLRs it with W6 = hook_id, and routes through dispatch_one.
-#define KIOU_HOOK_OBSERVER_SLOT_RVA            0x8F90C80
+//
+// Placement: sits inside __DATA.__common just past the entry-slot table
+// capacity (ENTRY_SLOT_BASE_RVA + ENTRY_SLOT_CAPACITY * 8 = 0x091E92B8).
+// The old 0x8F90C80 landed in __DATA.__bss, which UnityRuntime / il2cpp
+// overwrites during lazy init — publishing dispatch_one there survived
+// startup but got clobbered before the first observer fire, so the cave
+// BLR X16 jumped to garbage and crashed with a PC alignment fault. See
+// recipes/v1_0_2.py for the __common vs __bss note.
+#define KIOU_HOOK_OBSERVER_SLOT_RVA            0x091E92B8
 
 // Entry-cave slot table. Slot N at +N*8 holds the function pointer the
 // CAVE_ENTRY cave BLRs directly (no dispatcher).

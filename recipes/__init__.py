@@ -60,6 +60,9 @@ _v = importlib.import_module(_module_name)
 assert _v.ENTRY_SLOT_BASE_RVA + ENTRY_SLOT_CAPACITY * 8 <= _v.ZERO_REGION_END_RVA, (
     f"entry slot reservation overflows verified-zero region for {_target_version}"
 )
+assert _v.HOOK_SLOT_RVA + 8 <= _v.ZERO_REGION_END_RVA, (
+    f"observer slot placement overflows verified-zero region for {_target_version}"
+)
 
 CAVE_REGION                   = _v.CAVE_REGION
 HOOK_SLOT_RVA                 = _v.HOOK_SLOT_RVA
