@@ -206,3 +206,25 @@ void KIOUSwitchAccount(NSString *uuid) {
     IPALog([NSString stringWithFormat:
               @"[ACCOUNT] KIOUSwitchAccount armed pending_device_id=%@", uuid ?: @"(nil)"]);
 }
+
+// ---------------------------------------------------------------------------
+// Self user UUID (moved from KiouEditor's Hook_MatchingPlayer.m).
+// Key preserved to survive the KIOU-Hook migration on existing installs.
+// ---------------------------------------------------------------------------
+
+static NSString *const kKeySelfUserId = @"kiou_editor.self_user_id";
+
+NSString *KIOUSelfUserId(void) {
+    NSString *uid = [[NSUserDefaults standardUserDefaults] stringForKey:kKeySelfUserId];
+    return uid.length > 0 ? uid : nil;
+}
+
+void KIOUSetSelfUserId(NSString *uid) {
+    NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    if (uid.length == 0) {
+        [d removeObjectForKey:kKeySelfUserId];
+    } else {
+        [d setObject:uid forKey:kKeySelfUserId];
+    }
+    [d synchronize];
+}

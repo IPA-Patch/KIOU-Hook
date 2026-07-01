@@ -68,3 +68,19 @@ void      KIOUSetPendingDistinctId(NSString *uuid);
 // Arm the pending_device_id for account switching.
 // Refuses if pending_distinct_id is already set (mid-Register flow).
 void KIOUSwitchAccount(NSString *uuid);
+
+// ---------------------------------------------------------------------------
+// Self user UUID — matches ShogiMatchingPlayerStatus.userId. Consumers that
+// need to identify "self" among a list of players (e.g. avatar rewrites in
+// match-room DTOs) persist their once-captured self id here.
+//
+// Key: "kiou_editor.self_user_id" (preserved from KiouEditor's original
+// storage so existing installs keep their captured self id across the
+// KIOU-Hook migration).
+//
+// Returns nil / empty string when unset; callers should fall back to a
+// heuristic (typically: the player currently carrying KIOU_SAFE_SKIN_ID).
+// ---------------------------------------------------------------------------
+
+NSString *KIOUSelfUserId(void);
+void      KIOUSetSelfUserId(NSString *uid);
