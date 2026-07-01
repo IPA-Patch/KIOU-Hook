@@ -64,6 +64,23 @@ assert _v.HOOK_SLOT_RVA + 8 <= _v.ZERO_REGION_END_RVA, (
     f"observer slot placement overflows verified-zero region for {_target_version}"
 )
 
+# Optional consumer filter: KIOU_HOOK_ID_ALLOW=<comma-separated ids>
+# keeps only sites whose hook_id_name is listed. Consumers that don't
+# use every KIOU-Hook site (e.g. KiouForge doesn't ship the KiouEditor
+# feature caves) set this to skip patching sites that would otherwise
+# overrun the CAVE_REGION or collide with __oslogstring fragments.
+_allow_env = os.environ.get("KIOU_HOOK_ID_ALLOW", "").strip()
+if _allow_env:
+    _allow = {name.strip() for name in _allow_env.split(",") if name.strip()}
+    _sites = [row for row in _v.SITES if row[2] in _allow]
+    _unknown = _allow - {row[2] for row in _v.SITES}
+    if _unknown:
+        raise ValueError(
+            f"KIOU_HOOK_ID_ALLOW references unknown hook ids: {sorted(_unknown)}"
+        )
+else:
+    _sites = _v.SITES
+
 CAVE_REGION                   = _v.CAVE_REGION
 HOOK_SLOT_RVA                 = _v.HOOK_SLOT_RVA
 PROBED_HOOK_SLOT_RVA          = _v.PROBED_HOOK_SLOT_RVA
@@ -72,7 +89,7 @@ PROBED_INJECT_ENTRY_TABLE_RVA = _v.PROBED_INJECT_ENTRY_TABLE_RVA
 ENTRY_SLOT_BASE_RVA           = _v.ENTRY_SLOT_BASE_RVA
 
 PATCHES, CAVE_PATCHES, _SITES = build_exports(
-    _v.SITES,
+    _sites,
     _v.AFK_SITE,
     _v.AFK_ORIG_8,
     _v.HOOK_SLOT_RVA,
