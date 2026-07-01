@@ -28,7 +28,7 @@ ZERO_REGION_END_RVA           = 0x091F5978
 # below). The inline patch is retired so both 1.0.1 and 1.0.2 route AFK
 # through the same hook-body path. Consumers that want the historic
 # "always disabled" behaviour without wiring KIOUEditorFeatureEnabled
-# can call KIOUAfkDisableAlwaysFalseInstall(unityBase) — see KIOUHook.h.
+# can call KIOUInstallAfkSuppressHook(unityBase) — see KIOUHook.h.
 AFK_SITE   = None
 AFK_ORIG_8 = ""
 
