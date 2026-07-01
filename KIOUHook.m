@@ -159,3 +159,26 @@ void *KIOUHookInstall(const char *name, void *replacement, uintptr_t unityBase) 
     return orig;
 #endif
 }
+
+// ---------------------------------------------------------------------------
+// KIOUAfkDisableAlwaysFalseInstall — publishes an unconditional
+// GameOrchestrator.IsAfkEnabled -> false stub into the AFK cave slot.
+//
+// This is the drop-in replacement for the retired
+// (AFK_SITE / AFK_ORIG_8) inline patch on 1.0.2: consumers that want
+// the historic "AFK is always off" behaviour without any feature-flag
+// wiring call this once from their Tweak.m and are done. The
+// KIOUEditor feature-flag-gated variant
+// (KIOUEditorInstallAfkDisableHook in Hook/AfkDisable.m) is a separate
+// module that swaps in on top of this.
+// ---------------------------------------------------------------------------
+
+static bool kiou_afk_always_false(void *self) {
+    (void)self;
+    return false;
+}
+
+void KIOUAfkDisableAlwaysFalseInstall(uintptr_t unityBase) {
+    KIOUHookInstall(KIOU_HOOK_NAME_GAME_ORCHESTRATOR_IS_AFK,
+                    (void *)kiou_afk_always_false, unityBase);
+}

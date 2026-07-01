@@ -20,9 +20,13 @@ PROBED_INJECT_ENTRY_TABLE_RVA = 0x8F90C00
 ENTRY_SLOT_BASE_RVA           = 0x091E91B8
 ZERO_REGION_END_RVA           = 0x091F5978
 
-# GameOrchestrator.IsAfkEnabled — inline-patched to return false.
-AFK_SITE   = 0x594A034
-AFK_ORIG_8 = "f44fbea9fd7b01a9"
+# GameOrchestrator.IsAfkEnabled is now handled via CAVE_ENTRY (see SITES
+# below). The inline patch is retired so both 1.0.1 and 1.0.2 route AFK
+# through the same hook-body path. Consumers that want the historic
+# "always disabled" behaviour without wiring KIOUEditorFeatureEnabled
+# can call KIOUAfkDisableAlwaysFalseInstall(unityBase) — see KIOUHook.h.
+AFK_SITE   = None
+AFK_ORIG_8 = ""
 
 # fmt: off
 SITES = [
@@ -56,13 +60,6 @@ SITES = [
     # captured from assets/1.0.2/Kiou-1.0.2.ipa UnityFramework. None are
     # PC-relative; each first-4-bytes can be relocated verbatim into the
     # cave tail.
-    #
-    # GAME_ORCHESTRATOR_IS_AFK is intentionally NOT ported to a CAVE_ENTRY
-    # on 1.0.2: KiouForge's build already patches that address inline via
-    # AFK_SITE / AFK_ORIG_8, and a KiouEditor build for 1.0.2 that wants
-    # feature-flag-gated AFK toggling would need KiouForge to publish the
-    # cave slot to avoid a BLR-to-null cave-tail crash. Keep the inline
-    # patch until a consumer requires the cave path on 1.0.2.
     (0x5C3C29C, "fc6fbaa9", "KIOU_HOOK_ID_SYNC_ITEM_LIST_MERGE",        CAVE_ENTRY, "SyncItemListReply.InternalMergeFrom"),
     (0x5C458C4, "fa67bba9", "KIOU_HOOK_ID_COLLECTION_PRESET_MERGE",     CAVE_ENTRY, "UpdateCollectionPresetReply.InternalMergeFrom"),
     (0x5CACEF8, "ffc302d1", "KIOU_HOOK_ID_SELECT_CHAR_ASYNC",           CAVE_ENTRY, "SelectCharacterAsync"),
@@ -80,5 +77,6 @@ SITES = [
     (0x5AA4054, "fc6fbaa9", "KIOU_HOOK_ID_HOME_UTILITY_PRESENTER_CTOR", CAVE_ENTRY, "HomeUtilityPresenter.ctor"),
     (0x5DD7F54, "f44fbea9", "KIOU_HOOK_ID_UIBUTTONBASE_ONPOINTERCLICK", CAVE_ENTRY, "UIButtonBase.OnPointerClick"),
     (0x5DD2874, "ff0303d1", "KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT",        CAVE_ENTRY, "TitleScene+<OnActivateAsync>d__10.MoveNext"),
+    (0x594A034, "f44fbea9", "KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK",    CAVE_ENTRY, "GameOrchestrator.IsAfkEnabled"),
 ]
 # fmt: on
