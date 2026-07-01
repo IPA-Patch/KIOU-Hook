@@ -20,9 +20,13 @@ PROBED_INJECT_ENTRY_TABLE_RVA = 0x8F90C00
 ENTRY_SLOT_BASE_RVA           = 0x091E91B8
 ZERO_REGION_END_RVA           = 0x091F5978
 
-# GameOrchestrator.IsAfkEnabled — inline-patched to return false.
-AFK_SITE   = 0x594A034
-AFK_ORIG_8 = "f44fbea9fd7b01a9"
+# GameOrchestrator.IsAfkEnabled is now handled via CAVE_ENTRY (see SITES
+# below). The inline patch is retired so both 1.0.1 and 1.0.2 route AFK
+# through the same hook-body path. Consumers that want the historic
+# "always disabled" behaviour without wiring KIOUEditorFeatureEnabled
+# can call KIOUAfkDisableAlwaysFalseInstall(unityBase) — see KIOUHook.h.
+AFK_SITE   = None
+AFK_ORIG_8 = ""
 
 # fmt: off
 SITES = [
@@ -50,5 +54,29 @@ SITES = [
     # HttpMessageInvoker.SendAsync / Yaha borrow path that crashes when
     # the request or HttpHeaders internal dictionary is touched.
     (0x5BD9EE8, "f657bda9", "KIOU_HOOK_ID_HEADER_PROVIDER_SET_OR_UPDATE_HEADER", CAVE_ENTRY, "Project.Network.HeaderProvider.SetOrUpdateHeader"),
+
+    # --- KiouEditor entry caves (CAVE_ENTRY, 1.0.2 port of the 1.0.1 sites) ---
+    # RVAs verified against assets/1.0.2/dump.cs on 2026-07-01. Prologues
+    # captured from assets/1.0.2/Kiou-1.0.2.ipa UnityFramework. None are
+    # PC-relative; each first-4-bytes can be relocated verbatim into the
+    # cave tail.
+    (0x5C3C29C, "fc6fbaa9", "KIOU_HOOK_ID_SYNC_ITEM_LIST_MERGE",        CAVE_ENTRY, "SyncItemListReply.InternalMergeFrom"),
+    (0x5C458C4, "fa67bba9", "KIOU_HOOK_ID_COLLECTION_PRESET_MERGE",     CAVE_ENTRY, "UpdateCollectionPresetReply.InternalMergeFrom"),
+    (0x5CACEF8, "ffc302d1", "KIOU_HOOK_ID_SELECT_CHAR_ASYNC",           CAVE_ENTRY, "SelectCharacterAsync"),
+    (0x5C2C034, "fc6fbaa9", "KIOU_HOOK_ID_SELECT_CHAR_REPLY_MERGE",     CAVE_ENTRY, "SelectCharacterReply.InternalMergeFrom"),
+    (0x5B51C3C, "fc6fbaa9", "KIOU_HOOK_ID_MATCHING_PLAYER_MERGE",       CAVE_ENTRY, "ShogiMatchingPlayerStatus.InternalMergeFrom"),
+    (0x5C06590, "fc6fbaa9", "KIOU_HOOK_ID_HISTORY_DETAIL_MERGE",        CAVE_ENTRY, "GetShogiHistoryDetailListReply.InternalMergeFrom"),
+    (0x5C05FF0, "00804039", "KIOU_HOOK_ID_HISTORY_GET_PREMIUM",         CAVE_ENTRY, "GetShogiHistoryDetailListReply.get_IsPremiumUser"),
+    (0x585E000, "00004139", "KIOU_HOOK_ID_KIFU_DETAIL_IS_PREMIUM",      CAVE_ENTRY, "KifuDetailModel.IsPremiumUser"),
+    (0x582E614, "e80300aa", "KIOU_HOOK_ID_VOICE_PLAYER_SATISFIES",      CAVE_ENTRY, "CharacterVoicePlayer.SatisfiesRule"),
+    (0x584DB64, "00704039", "KIOU_HOOK_ID_VOICE_CELL_GET_IS_LOCKED",    CAVE_ENTRY, "CharacterVoiceScrollerCellModel.get_IsLocked"),
+    (0x597E608, "f85fbca9", "KIOU_HOOK_ID_BSE_CTOR",                    CAVE_ENTRY, "BeginnerSupportEvaluator.ctor"),
+    (0x5980890, "f657bda9", "KIOU_HOOK_ID_BSE_ENSURE_INITIALIZED",      CAVE_ENTRY, "BeginnerSupportEvaluator.EnsureInitializedLocked"),
+    (0x5942AA0, "00404039", "KIOU_HOOK_ID_RBSUPPORT_GET_ENABLED",       CAVE_ENTRY, "ResolvedBeginnerSupport.get_Enabled"),
+    (0x5942AC0, "002040b9", "KIOU_HOOK_ID_RBSUPPORT_GET_DEPTH",         CAVE_ENTRY, "ResolvedBeginnerSupport.get_Depth"),
+    (0x5AA4054, "fc6fbaa9", "KIOU_HOOK_ID_HOME_UTILITY_PRESENTER_CTOR", CAVE_ENTRY, "HomeUtilityPresenter.ctor"),
+    (0x5DD7F54, "f44fbea9", "KIOU_HOOK_ID_UIBUTTONBASE_ONPOINTERCLICK", CAVE_ENTRY, "UIButtonBase.OnPointerClick"),
+    (0x5DD2874, "ff0303d1", "KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT",        CAVE_ENTRY, "TitleScene+<OnActivateAsync>d__10.MoveNext"),
+    (0x594A034, "f44fbea9", "KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK",    CAVE_ENTRY, "GameOrchestrator.IsAfkEnabled"),
 ]
 # fmt: on

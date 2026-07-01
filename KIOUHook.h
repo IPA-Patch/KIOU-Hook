@@ -307,6 +307,17 @@ uintptr_t KIOUHookSiteAddr(const char *hook_name, uintptr_t unityBase);
 void KIOUInstallAccountObserveHook(uintptr_t unityBase);
 void KIOUInstallGrpcLoggingHook(uintptr_t unityBase);
 
+// Publish a hook body that unconditionally returns false for
+// GameOrchestrator.IsAfkEnabled. This is the "AFK is always off"
+// convenience installer for consumers that want the historic
+// inline-patch behaviour without wiring the KIOUEditor feature-flag
+// surface. Cave slot is populated after this call, so any consumer
+// building against a recipe that carries the AFK site as
+// CAVE_ENTRY (v1_0_1 and later v1_0_2) can call this once at
+// startup and be done. See Hook/AfkDisable.m for the
+// feature-flag-gated variant (KIOUEditorInstallAfkDisableHook).
+void KIOUAfkDisableAlwaysFalseInstall(uintptr_t unityBase);
+
 // Drive BackToTitleSequence.RunAsync — called by consumer settings UIs after
 // the user confirms an account switch so KIOU re-runs AccountExists → Login
 // with the pending_device_id substitution in effect (no app relaunch needed).
