@@ -7,12 +7,12 @@
 // Pure Foundation + Chinlan logging. No KIOUHook.h dependency.
 // ===========================================================================
 
-NSString *const KFAccountStateChangedNotification =
-    @"KFAccountStateChangedNotification";
+NSString *const KIOUAccountStateChangedNotification =
+    @"KIOUAccountStateChangedNotification";
 
 static inline void kfPostAccountStateChanged(void) {
     [[NSNotificationCenter defaultCenter]
-        postNotificationName:KFAccountStateChangedNotification object:nil];
+        postNotificationName:KIOUAccountStateChangedNotification object:nil];
 }
 
 static NSString *const kKeyAccounts          = @"kiou_forge.account.accounts";
@@ -28,7 +28,7 @@ static NSString *const kFieldUserId     = @"userId";
 static NSString *const kFieldDistinctId = @"distinctId";
 static NSString *const kFieldSavedAt    = @"savedAt";
 
-NSArray<NSDictionary *> *KFListAccounts(void) {
+NSArray<NSDictionary *> *KIOUListAccounts(void) {
     NSArray *raw = [[NSUserDefaults standardUserDefaults] arrayForKey:kKeyAccounts];
     if (![raw isKindOfClass:[NSArray class]]) return @[];
     NSMutableArray *result = [NSMutableArray arrayWithCapacity:raw.count];
@@ -38,7 +38,7 @@ NSArray<NSDictionary *> *KFListAccounts(void) {
     return result;
 }
 
-void KFSaveAccount(NSString *uuid, NSString *userName, NSString *openId,
+void KIOUSaveAccount(NSString *uuid, NSString *userName, NSString *openId,
                    NSString *userId, NSString *distinctId) {
     if (userId.length == 0) {
         IPALog([NSString stringWithFormat:
@@ -47,7 +47,7 @@ void KFSaveAccount(NSString *uuid, NSString *userName, NSString *openId,
         return;
     }
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
-    NSArray *existing = KFListAccounts();
+    NSArray *existing = KIOUListAccounts();
     NSMutableArray<NSDictionary *> *next =
         [NSMutableArray arrayWithCapacity:existing.count + 1];
     BOOL replaced = NO;
@@ -81,11 +81,11 @@ void KFSaveAccount(NSString *uuid, NSString *userName, NSString *openId,
     kfPostAccountStateChanged();
 }
 
-void KFUpdateAccountProfile(NSString *userId, NSString *openId,
+void KIOUUpdateAccountProfile(NSString *userId, NSString *openId,
                             NSArray<NSDictionary *> *ranks) {
     if (userId.length == 0) return;
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
-    NSArray *existing = KFListAccounts();
+    NSArray *existing = KIOUListAccounts();
     BOOL found = NO;
     NSMutableArray<NSDictionary *> *next =
         [NSMutableArray arrayWithCapacity:existing.count];
@@ -109,10 +109,10 @@ void KFUpdateAccountProfile(NSString *userId, NSString *openId,
     kfPostAccountStateChanged();
 }
 
-void KFDeleteAccount(NSString *userId) {
+void KIOUDeleteAccount(NSString *userId) {
     if (userId.length == 0) return;
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
-    NSArray *existing = KFListAccounts();
+    NSArray *existing = KIOUListAccounts();
     NSMutableArray<NSDictionary *> *next =
         [NSMutableArray arrayWithCapacity:existing.count];
     for (NSDictionary *e in existing) {
@@ -127,12 +127,12 @@ void KFDeleteAccount(NSString *userId) {
     kfPostAccountStateChanged();
 }
 
-NSString *KFActiveAccountUserId(void) {
+NSString *KIOUActiveAccountUserId(void) {
     id v = [[NSUserDefaults standardUserDefaults] objectForKey:kKeyActiveUserId];
     return [v isKindOfClass:[NSString class]] ? v : nil;
 }
 
-void KFSetActiveAccountUserId(NSString *userId) {
+void KIOUSetActiveAccountUserId(NSString *userId) {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
     if (userId.length == 0) {
         [d removeObjectForKey:kKeyActiveUserId];
@@ -144,12 +144,12 @@ void KFSetActiveAccountUserId(NSString *userId) {
     kfPostAccountStateChanged();
 }
 
-bool KFForceRegisterOnNextLaunch(void) {
+bool KIOUForceRegisterOnNextLaunch(void) {
     id v = [[NSUserDefaults standardUserDefaults] objectForKey:kKeyForceRegister];
     return v ? [v boolValue] : false;
 }
 
-void KFSetForceRegisterOnNextLaunch(bool enabled) {
+void KIOUSetForceRegisterOnNextLaunch(bool enabled) {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
     if (enabled) {
         [d setBool:YES forKey:kKeyForceRegister];
@@ -160,12 +160,12 @@ void KFSetForceRegisterOnNextLaunch(bool enabled) {
               enabled ? "true" : "false"]);
 }
 
-NSString *KFPendingDeviceId(void) {
+NSString *KIOUPendingDeviceId(void) {
     id v = [[NSUserDefaults standardUserDefaults] objectForKey:kKeyPendingDeviceId];
     return ([v isKindOfClass:[NSString class]] && [(NSString *)v length] > 0) ? v : nil;
 }
 
-void KFSetPendingDeviceId(NSString *uuid) {
+void KIOUSetPendingDeviceId(NSString *uuid) {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
     if (uuid.length == 0) {
         [d removeObjectForKey:kKeyPendingDeviceId];
@@ -177,12 +177,12 @@ void KFSetPendingDeviceId(NSString *uuid) {
     kfPostAccountStateChanged();
 }
 
-NSString *KFPendingDistinctId(void) {
+NSString *KIOUPendingDistinctId(void) {
     id v = [[NSUserDefaults standardUserDefaults] objectForKey:kKeyPendingDistinctId];
     return ([v isKindOfClass:[NSString class]] && [(NSString *)v length] > 0) ? v : nil;
 }
 
-void KFSetPendingDistinctId(NSString *uuid) {
+void KIOUSetPendingDistinctId(NSString *uuid) {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
     if (uuid.length == 0) {
         [d removeObjectForKey:kKeyPendingDistinctId];
@@ -194,15 +194,15 @@ void KFSetPendingDistinctId(NSString *uuid) {
     kfPostAccountStateChanged();
 }
 
-void KFSwitchAccount(NSString *uuid) {
-    NSString *armedDistinct = KFPendingDistinctId();
+void KIOUSwitchAccount(NSString *uuid) {
+    NSString *armedDistinct = KIOUPendingDistinctId();
     if (armedDistinct.length > 0) {
         IPALog([NSString stringWithFormat:
-                  @"[ACCOUNT] KFSwitchAccount refused: Register flow in progress "
+                  @"[ACCOUNT] KIOUSwitchAccount refused: Register flow in progress "
                   @"(pending_distinct_id=%@)", armedDistinct]);
         return;
     }
-    KFSetPendingDeviceId(uuid);
+    KIOUSetPendingDeviceId(uuid);
     IPALog([NSString stringWithFormat:
-              @"[ACCOUNT] KFSwitchAccount armed pending_device_id=%@", uuid ?: @"(nil)"]);
+              @"[ACCOUNT] KIOUSwitchAccount armed pending_device_id=%@", uuid ?: @"(nil)"]);
 }
