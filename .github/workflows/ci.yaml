@@ -1,0 +1,111 @@
+name: ci
+
+# Cheap gate for every PR and push. Runs four independent jobs:
+#
+#   commitlint       — conventional-commit type + subject-case check on
+#                      every commit in the PR (or the last commit for
+#                      a direct push).
+#   python-lint      — ruff check on recipes/ + tools/.
+#   python-typecheck — pyright on recipes/ + tools/. Missing imports
+#                      (Kanade's tools.encode) surface as warnings,
+#                      not errors — that submodule lives in the
+#                      consumer tweak's repo, not here.
+#   recipe-check     — AST-level structural validation of the SITES
+#                      tables against HOOK_IDS / ENTRY_SLOT_INDEX. No
+#                      runtime dependency on Kanade.
+#
+# Deliberately excluded from this workflow:
+#   - Objective-C compile checks — consumers (KiouForge et al.) already
+#     run a full Theos build in their own CI, so bringing an iOS
+#     toolchain into this repo would duplicate that work for no gain.
+#   - verify_sites against a decrypted IPA — the IPA + dump.cs.index.json
+#     are private assets that live in the consumer repo, not here.
+#     A future PR can wire this up via GitHub Actions secrets if
+#     needed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  commitlint:
+    name: Commit Lint
+    if: github.event.action != 'closed' || github.event.pull_request.merged != true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          # commitlint needs to walk back `pull_request.commits` commits to
+          # cover every PR commit individually, so the default shallow
+          # clone (`fetch-depth: 1`) can't resolve `HEAD~N`.
+          fetch-depth: 0
+      - name: Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install commitlint
+        run: |
+          bun install conventional-changelog-conventionalcommits
+          bun install @commitlint/config-conventional
+          bun install commitlint@latest
+      - name: Validate current commit (last commit) with commitlint
+        if: github.event_name == 'push'
+        run: bunx commitlint --last --verbose
+      - name: Validate PR commits with commitlint
+        if: github.event_name == 'pull_request'
+        run: bunx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+
+  python-lint:
+    name: Python Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install ruff
+        run: pip install --upgrade ruff
+      - name: Run ruff check
+        run: ruff check recipes/ tools/
+      # `ruff format --check` is intentionally NOT run: the recipe files
+      # keep column-aligned dict literals (HOOK_IDS, ENTRY_SLOT_INDEX,
+      # SITES rows) for readability, and the formatter would collapse
+      # them. Lint stays authoritative; formatting stays a style choice.
+
+  python-typecheck:
+    name: Python Typecheck (pyright)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install pyright
+        run: pip install --upgrade pyright
+      - name: Run pyright
+        run: pyright recipes/ tools/
+
+  recipe-check:
+    name: Recipe Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Run recipe consistency check
+        run: python -m tools.check_recipes
