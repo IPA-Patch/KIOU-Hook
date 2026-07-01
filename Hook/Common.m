@@ -173,6 +173,16 @@ void KIOUEditorApplyTitleSpriteToClone(void *cloneGo) {
            @"FriendUnhide not yet ported");
 }
 
+// Consumer-provided UIKit settings presenter. Real definition lives in
+// the tweak's own SettingsUI.m; this stub logs and no-ops so KIOU-Hook
+// links standalone when a consumer pulls in Hook/FriendUnhide.m but
+// hasn't wired the UIKit side yet.
+__attribute__((weak))
+void KIOUEditorPresentSettings(void) {
+    IPALog(@"[COMMON] KIOUEditorPresentSettings stub called — "
+           @"consumer tweak did not wire the UIKit settings surface");
+}
+
 // ---------------------------------------------------------------------------
 // Feature-flag / assist-tuning fallbacks. Consumer tweaks (KiouEditor) own
 // the real storage — settings UI, NSUserDefaults, defaults. These weak
