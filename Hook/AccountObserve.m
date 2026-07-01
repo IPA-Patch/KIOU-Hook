@@ -68,7 +68,7 @@ typedef bool         (*AccountExists_t)(void *data, void *mi);
 typedef void *       (*LoginArgsCreate_t)(void *deviceId, void *distinctId, void *mi);
 typedef void *       (*RegisterUserArgsCreate_t)(void *userName, void *distinctId, void *mi);
 typedef void         (*MoveNextVoid_t)(void *self, void *mi);
-typedef KFUniTaskRet (*RunResetSeq_t)(void *ct, void *mi);
+typedef KIOUUniTaskRet (*RunResetSeq_t)(void *ct, void *mi);
 
 // Orig pointers — filled by KIOUHookInstall at install time on both JB and
 // chinlan. On chinlan these hold the cave-bypass entries; on JB they hold
@@ -131,7 +131,7 @@ static const char *kfRankLabel(int32_t rank) {
 // RegisterUserArgs.Create — distinctId substitution
 // ===========================================================================
 static void *kfSwapRegisterDistinctId(void *userName, void *distinctId) {
-    NSString *pending = KFPendingDistinctId();
+    NSString *pending = KIOUPendingDistinctId();
     if (pending.length > 0 && g_il2cpp_string_new) {
         void *newStr = g_il2cpp_string_new(pending.UTF8String);
         if (newStr) {
@@ -147,7 +147,7 @@ static void *kfSwapRegisterDistinctId(void *userName, void *distinctId) {
     return distinctId;
 }
 
-void *KFHookRegisterUserArgsCreate(void *userName, void *distinctId, void *mi) {
+void *KIOUHookRegisterUserArgsCreate(void *userName, void *distinctId, void *mi) {
     void *useDistinctId = kfSwapRegisterDistinctId(userName, distinctId);
     return s_origRegisterUserArgsCreate
         ? s_origRegisterUserArgsCreate(userName, useDistinctId, mi)
@@ -158,7 +158,7 @@ void *KFHookRegisterUserArgsCreate(void *userName, void *distinctId, void *mi) {
 // LoginArgs.Create — deviceId substitution
 // ===========================================================================
 static void *kfSwapLoginDeviceId(void *deviceId, void *distinctId) {
-    NSString *pending = KFPendingDeviceId();
+    NSString *pending = KIOUPendingDeviceId();
     if (pending.length > 0 && g_il2cpp_string_new) {
         void *newStr = g_il2cpp_string_new(pending.UTF8String);
         if (newStr) {
@@ -174,7 +174,7 @@ static void *kfSwapLoginDeviceId(void *deviceId, void *distinctId) {
     return deviceId;
 }
 
-void *KFHookLoginArgsCreate(void *deviceId, void *distinctId, void *mi) {
+void *KIOUHookLoginArgsCreate(void *deviceId, void *distinctId, void *mi) {
     void *useDeviceId = kfSwapLoginDeviceId(deviceId, distinctId);
     return s_origLoginArgsCreate
         ? s_origLoginArgsCreate(useDeviceId, distinctId, mi)
@@ -203,17 +203,17 @@ static void observeRunLoginSeqCompletion(void *self) {
         NSString *userId = extractJWTSub(accessToken);
         if (userId.length == 0) userId = g_latestObservedUserId;
         if (userId.length > 0 && deviceId.length > 0) {
-            KFSaveAccount(deviceId, userName, @"", userId, deviceId);
-            KFSetActiveAccountUserId(userId);
+            KIOUSaveAccount(deviceId, userName, @"", userId, deviceId);
+            KIOUSetActiveAccountUserId(userId);
         }
-        KFSetPendingDeviceId(nil);
-        KFSetPendingDistinctId(nil);
-        KFSetForceRegisterOnNextLaunch(false);
+        KIOUSetPendingDeviceId(nil);
+        KIOUSetPendingDistinctId(nil);
+        KIOUSetForceRegisterOnNextLaunch(false);
         return;
     }
 }
 
-void KFHookRunLoginSeqMoveNext(void *self, void *mi) {
+void KIOUHookRunLoginSeqMoveNext(void *self, void *mi) {
     if (s_origRunLoginSeqMoveNext) {
         @try { s_origRunLoginSeqMoveNext(self, mi); }
         @catch (NSException *e) {
@@ -267,14 +267,14 @@ static void observeGetSelfProfileCompletion(void *self) {
             }
         }
 
-        NSString *activeUserId = KFActiveAccountUserId();
+        NSString *activeUserId = KIOUActiveAccountUserId();
         if (activeUserId.length > 0)
-            KFUpdateAccountProfile(activeUserId, openUserId, rankDicts);
+            KIOUUpdateAccountProfile(activeUserId, openUserId, rankDicts);
         return;
     }
 }
 
-void KFHookGetSelfProfileMoveNext(void *self, void *mi) {
+void KIOUHookGetSelfProfileMoveNext(void *self, void *mi) {
     if (s_origGetSelfProfileMoveNext) {
         @try { s_origGetSelfProfileMoveNext(self, mi); }
         @catch (NSException *e) {
@@ -299,13 +299,13 @@ static void observeAccountExistsData(void *data) {
     if (userId.length > 0) g_latestObservedUserId = userId;
 
     if (userId.length > 0 && deviceId.length > 0) {
-        KFSaveAccount(deviceId, userName, openId, userId, deviceId);
-        if (KFActiveAccountUserId().length == 0)
-            KFSetActiveAccountUserId(userId);
+        KIOUSaveAccount(deviceId, userName, openId, userId, deviceId);
+        if (KIOUActiveAccountUserId().length == 0)
+            KIOUSetActiveAccountUserId(userId);
     }
 }
 
-bool KFHookAccountExists(void *data, void *mi) {
+bool KIOUHookAccountExists(void *data, void *mi) {
     bool origResult = false;
     if (s_origAccountExists) {
         @try { origResult = s_origAccountExists(data, mi); }
@@ -314,7 +314,7 @@ bool KFHookAccountExists(void *data, void *mi) {
         }
     }
     observeAccountExistsData(data);
-    bool forceRegister = KFForceRegisterOnNextLaunch();
+    bool forceRegister = KIOUForceRegisterOnNextLaunch();
     bool result = forceRegister ? false : origResult;
     if (forceRegister) {
         IPALog(@"[ACCOUNT] AccountExists overridden false (force_register)");
@@ -325,20 +325,20 @@ bool KFHookAccountExists(void *data, void *mi) {
 // ===========================================================================
 // RunResetUserDataSequenceAsync — generate fresh UUID for new account
 // ===========================================================================
-KFUniTaskRet KFHookRunResetUserDataSeq(void *ct, void *mi) {
+KIOUUniTaskRet KIOUHookRunResetUserDataSeq(void *ct, void *mi) {
     NSString *freshUuid = [[NSUUID UUID] UUIDString].lowercaseString;
-    KFSetPendingDistinctId(freshUuid);
-    KFSetPendingDeviceId(freshUuid);
+    KIOUSetPendingDistinctId(freshUuid);
+    KIOUSetPendingDeviceId(freshUuid);
     IPALog([NSString stringWithFormat:
               @"[ACCOUNT] RunResetUserDataSequenceAsync armed fresh_uuid=%@", freshUuid]);
-    return s_origRunResetSeq ? s_origRunResetSeq(ct, mi) : (KFUniTaskRet){0, 0};
+    return s_origRunResetSeq ? s_origRunResetSeq(ct, mi) : (KIOUUniTaskRet){0, 0};
 }
 
-KFUniTaskRet KFHookRunDeleteAccountSeq(void *ct, void *mi) {
+KIOUUniTaskRet KIOUHookRunDeleteAccountSeq(void *ct, void *mi) {
     IPALog([NSString stringWithFormat:
               @"[ACCOUNT] RunDeleteAccountSequenceAsync (active=%@)",
-              KFActiveAccountUserId() ?: @"(none)"]);
-    return s_origRunDeleteAccountSeq ? s_origRunDeleteAccountSeq(ct, mi) : (KFUniTaskRet){0, 0};
+              KIOUActiveAccountUserId() ?: @"(none)"]);
+    return s_origRunDeleteAccountSeq ? s_origRunDeleteAccountSeq(ct, mi) : (KIOUUniTaskRet){0, 0};
 }
 
 // ===========================================================================
@@ -347,16 +347,16 @@ KFUniTaskRet KFHookRunDeleteAccountSeq(void *ct, void *mi) {
 // to the title scene, re-running AccountExists → LoginAsync with the
 // pending_device_id substitution in effect (no app relaunch needed).
 // ===========================================================================
-typedef KFUniTaskRet (*BackToTitleRunAsync_t)(void *ct, void *mi);
+typedef KIOUUniTaskRet (*BackToTitleRunAsync_t)(void *ct, void *mi);
 
-void KFNavigateToTitleScene(void) {
+void KIOUNavigateToTitleScene(void) {
     if (g_unityBase == 0) {
-        IPALog(@"[ACCOUNT] KFNavigateToTitleScene: unityBase not yet set");
+        IPALog(@"[ACCOUNT] KIOUNavigateToTitleScene: unityBase not yet set");
         return;
     }
     uintptr_t addr = KIOUHookSiteAddr(KIOU_HOOK_NAME_BACK_TO_TITLE_RUN_ASYNC, g_unityBase);
     if (addr == 0) {
-        IPALog(@"[ACCOUNT] KFNavigateToTitleScene: site address unknown");
+        IPALog(@"[ACCOUNT] KIOUNavigateToTitleScene: site address unknown");
         return;
     }
     BackToTitleRunAsync_t fn = (BackToTitleRunAsync_t)addr;
@@ -372,20 +372,20 @@ void KFNavigateToTitleScene(void) {
 // ===========================================================================
 // Installer
 // ===========================================================================
-void KFInstallAccountObserveHook(uintptr_t unityBase) {
+void KIOUInstallAccountObserveHook(uintptr_t unityBase) {
     if (!g_il2cpp_string_new)
         g_il2cpp_string_new = (Il2CppStringNew_t)dlsym(RTLD_DEFAULT, "il2cpp_string_new");
 
     s_origAccountExists = (AccountExists_t)
-        KIOUHookInstall(KIOU_HOOK_NAME_ACCOUNT_EXISTS, (void *)KFHookAccountExists, unityBase);
+        KIOUHookInstall(KIOU_HOOK_NAME_ACCOUNT_EXISTS, (void *)KIOUHookAccountExists, unityBase);
     s_origLoginArgsCreate = (LoginArgsCreate_t)
-        KIOUHookInstall(KIOU_HOOK_NAME_LOGIN_ARGS_CREATE, (void *)KFHookLoginArgsCreate, unityBase);
+        KIOUHookInstall(KIOU_HOOK_NAME_LOGIN_ARGS_CREATE, (void *)KIOUHookLoginArgsCreate, unityBase);
     s_origRegisterUserArgsCreate = (RegisterUserArgsCreate_t)
-        KIOUHookInstall(KIOU_HOOK_NAME_REGISTER_USER_ARGS_CREATE, (void *)KFHookRegisterUserArgsCreate, unityBase);
+        KIOUHookInstall(KIOU_HOOK_NAME_REGISTER_USER_ARGS_CREATE, (void *)KIOUHookRegisterUserArgsCreate, unityBase);
     s_origRunLoginSeqMoveNext = (MoveNextVoid_t)
-        KIOUHookInstall(KIOU_HOOK_NAME_RUN_LOGIN_SEQ_MOVENEXT, (void *)KFHookRunLoginSeqMoveNext, unityBase);
+        KIOUHookInstall(KIOU_HOOK_NAME_RUN_LOGIN_SEQ_MOVENEXT, (void *)KIOUHookRunLoginSeqMoveNext, unityBase);
     s_origGetSelfProfileMoveNext = (MoveNextVoid_t)
-        KIOUHookInstall(KIOU_HOOK_NAME_GET_SELF_PROFILE_MOVENEXT, (void *)KFHookGetSelfProfileMoveNext, unityBase);
+        KIOUHookInstall(KIOU_HOOK_NAME_GET_SELF_PROFILE_MOVENEXT, (void *)KIOUHookGetSelfProfileMoveNext, unityBase);
 
 #if IPA_CHINLAN
     (void)KF_RVA_RUN_RESET_USER_DATA_SEQ;
@@ -396,7 +396,7 @@ void KFInstallAccountObserveHook(uintptr_t unityBase) {
     {
         uintptr_t addr = unityBase + KF_RVA_RUN_RESET_USER_DATA_SEQ;
         void *orig = NULL;
-        MSHookFunction((void *)addr, (void *)KFHookRunResetUserDataSeq, &orig);
+        MSHookFunction((void *)addr, (void *)KIOUHookRunResetUserDataSeq, &orig);
         s_origRunResetSeq = (RunResetSeq_t)orig;
         IPALog([NSString stringWithFormat:
                   @"[ACCOUNT] hooked RunResetUserDataSeq @0x%lx", (unsigned long)addr]);
@@ -404,7 +404,7 @@ void KFInstallAccountObserveHook(uintptr_t unityBase) {
     {
         uintptr_t addr = unityBase + KF_RVA_RUN_DELETE_ACCOUNT_SEQ;
         void *orig = NULL;
-        MSHookFunction((void *)addr, (void *)KFHookRunDeleteAccountSeq, &orig);
+        MSHookFunction((void *)addr, (void *)KIOUHookRunDeleteAccountSeq, &orig);
         s_origRunDeleteAccountSeq = (RunResetSeq_t)orig;
         IPALog([NSString stringWithFormat:
                   @"[ACCOUNT] hooked RunDeleteAccountSeq @0x%lx", (unsigned long)addr]);

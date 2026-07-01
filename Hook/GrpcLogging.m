@@ -42,7 +42,7 @@ static HeaderProviderSetOrUpdate_t s_origHeaderProviderSetOrUpdate  = NULL;
 // ---------------------------------------------------------------------------
 static bool pendingDeviceIsSavedAccount(NSString *pending) {
     if (pending.length == 0) return false;
-    for (NSDictionary *acc in KFListAccounts()) {
+    for (NSDictionary *acc in KIOUListAccounts()) {
         id uuid = acc[@"uuid"];
         if ([uuid isKindOfClass:[NSString class]] &&
             [(NSString *)uuid isEqualToString:pending]) {
@@ -53,10 +53,10 @@ static bool pendingDeviceIsSavedAccount(NSString *pending) {
 }
 
 static NSString *targetUserIdForPendingDevice(void) {
-    NSString *pending = KFPendingDeviceId();
+    NSString *pending = KIOUPendingDeviceId();
     if (pending.length == 0) return nil;
     if (!pendingDeviceIsSavedAccount(pending)) return nil;
-    return KFActiveAccountUserId();
+    return KIOUActiveAccountUserId();
 }
 
 // il2cpp string reader — mirrors readIl2CppStr in AccountObserve.m. Kept
@@ -86,7 +86,7 @@ static NSString *readIl2CppStrLocal(void *strObj) {
 // value argument with a freshly-allocated il2cpp string carrying the
 // target account's userId. Otherwise pass through untouched.
 // ---------------------------------------------------------------------------
-void KFHookHeaderProviderSetOrUpdate(void *self, void *keyStr, void *valueStr, void *mi) {
+void KIOUHookHeaderProviderSetOrUpdate(void *self, void *keyStr, void *valueStr, void *mi) {
     NSString *key = readIl2CppStrLocal(keyStr);
     if ([key isEqualToString:@"x-user-id"]) {
         NSString *target = targetUserIdForPendingDevice();
@@ -108,13 +108,13 @@ void KFHookHeaderProviderSetOrUpdate(void *self, void *keyStr, void *valueStr, v
 // HttpMessageInvoker.SendAsync — bare passthrough. See file header for why
 // we don't touch request/self here.
 // ---------------------------------------------------------------------------
-void *KFHookHttpMsgInvokerSendAsync(void *self, void *request, void *ct, void *mi) {
+void *KIOUHookHttpMsgInvokerSendAsync(void *self, void *request, void *ct, void *mi) {
     return s_origHttpMsgInvokerSendAsync
         ? s_origHttpMsgInvokerSendAsync(self, request, ct, mi)
         : NULL;
 }
 
-void KFInstallGrpcLoggingHook(uintptr_t unityBase) {
+void KIOUInstallGrpcLoggingHook(uintptr_t unityBase) {
     (void)unityBase;
     if (!g_GrpcStringNew)
         g_GrpcStringNew =
@@ -122,11 +122,11 @@ void KFInstallGrpcLoggingHook(uintptr_t unityBase) {
 
     s_origHttpMsgInvokerSendAsync = (GenericSendAsync_t)
         KIOUHookInstall(KIOU_HOOK_NAME_HTTPMSGINVOKER_SEND_ASYNC,
-                         (void *)KFHookHttpMsgInvokerSendAsync, unityBase);
+                         (void *)KIOUHookHttpMsgInvokerSendAsync, unityBase);
 
     s_origHeaderProviderSetOrUpdate = (HeaderProviderSetOrUpdate_t)
         KIOUHookInstall(KIOU_HOOK_NAME_HEADER_PROVIDER_SET_OR_UPDATE_HEADER,
-                         (void *)KFHookHeaderProviderSetOrUpdate, unityBase);
+                         (void *)KIOUHookHeaderProviderSetOrUpdate, unityBase);
 
     IPALog([NSString stringWithFormat:
               @"[GRPC] hook resolved: origSendAsync=%p origSetOrUpdate=%p strNew=%p",

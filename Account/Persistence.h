@@ -28,43 +28,59 @@
 // ===========================================================================
 
 // Notification posted on any account state change.
-extern NSString *const KFAccountStateChangedNotification;
+extern NSString *const KIOUAccountStateChangedNotification;
 
 // Save or refresh an account. Primary key is `userId`.
-void KFSaveAccount(NSString *uuid,
+void KIOUSaveAccount(NSString *uuid,
                    NSString *userName,
                    NSString *openId,
                    NSString *userId,
                    NSString *distinctId);
 
 // Return saved accounts in insertion order.
-NSArray<NSDictionary *> *KFListAccounts(void);
+NSArray<NSDictionary *> *KIOUListAccounts(void);
 
 // Delete an account by userId. No-op if not found.
-void KFDeleteAccount(NSString *userId);
+void KIOUDeleteAccount(NSString *userId);
 
 // Merge openId + ranks into the saved entry for userId.
-void KFUpdateAccountProfile(NSString *userId,
+void KIOUUpdateAccountProfile(NSString *userId,
                             NSString *openId,
                             NSArray<NSDictionary *> *ranks);
 
 // Most recently observed active account userId.
-NSString *KFActiveAccountUserId(void);
-void      KFSetActiveAccountUserId(NSString *userId);
+NSString *KIOUActiveAccountUserId(void);
+void      KIOUSetActiveAccountUserId(NSString *userId);
 
 // When true, next AccountExists check returns false unconditionally,
 // routing KIOU into the name-entry Register flow.
-bool KFForceRegisterOnNextLaunch(void);
-void KFSetForceRegisterOnNextLaunch(bool enabled);
+bool KIOUForceRegisterOnNextLaunch(void);
+void KIOUSetForceRegisterOnNextLaunch(bool enabled);
 
 // Pending deviceId override — swapped into LoginArgs.Create.
-NSString *KFPendingDeviceId(void);
-void      KFSetPendingDeviceId(NSString *uuid);
+NSString *KIOUPendingDeviceId(void);
+void      KIOUSetPendingDeviceId(NSString *uuid);
 
 // Pending distinctId override — swapped into RegisterUserArgs.Create.
-NSString *KFPendingDistinctId(void);
-void      KFSetPendingDistinctId(NSString *uuid);
+NSString *KIOUPendingDistinctId(void);
+void      KIOUSetPendingDistinctId(NSString *uuid);
 
 // Arm the pending_device_id for account switching.
 // Refuses if pending_distinct_id is already set (mid-Register flow).
-void KFSwitchAccount(NSString *uuid);
+void KIOUSwitchAccount(NSString *uuid);
+
+// ---------------------------------------------------------------------------
+// Self user UUID — matches ShogiMatchingPlayerStatus.userId. Consumers that
+// need to identify "self" among a list of players (e.g. avatar rewrites in
+// match-room DTOs) persist their once-captured self id here.
+//
+// Key: "kiou_editor.self_user_id" (preserved from KiouEditor's original
+// storage so existing installs keep their captured self id across the
+// KIOU-Hook migration).
+//
+// Returns nil / empty string when unset; callers should fall back to a
+// heuristic (typically: the player currently carrying KIOU_SAFE_SKIN_ID).
+// ---------------------------------------------------------------------------
+
+NSString *KIOUSelfUserId(void);
+void      KIOUSetSelfUserId(NSString *uid);
