@@ -30,6 +30,7 @@ const char KIOU_HOOK_NAME_LOCAL_END[]                 = "local_pvp_on_match_end"
 const char KIOU_HOOK_NAME_ONLINE_END[]                = "online_pvp_on_match_end";
 const char KIOU_HOOK_NAME_REPLAY_END[]                = "record_replay_on_match_end";
 const char KIOU_HOOK_NAME_BACK_TO_TITLE_RUN_ASYNC[]   = "back_to_title_run_async";
+const char KIOU_HOOK_NAME_HEADER_PROVIDER_SET_OR_UPDATE_HEADER[] = "header_provider_set_or_update_header";
 // KiouEditor hook sites (1.0.1).
 const char KIOU_HOOK_NAME_SYNC_ITEM_LIST_MERGE[]         = "sync_item_list_merge";
 const char KIOU_HOOK_NAME_COLLECTION_PRESET_MERGE[]      = "collection_preset_merge";
@@ -78,6 +79,8 @@ static const KIOUHookEntry kCatalog[] = {
     { KIOU_HOOK_NAME_LOCAL_END,                 KIOU_HOOK_ID_KIFU_LOCAL_END,            KIOU_HOOK_RVA_LOCAL_END                 },
     { KIOU_HOOK_NAME_ONLINE_END,                KIOU_HOOK_ID_KIFU_ONLINE_END,           KIOU_HOOK_RVA_ONLINE_END                },
     { KIOU_HOOK_NAME_REPLAY_END,                KIOU_HOOK_ID_KIFU_REPLAY_END,           KIOU_HOOK_RVA_REPLAY_END                },
+    // Additional entry caves.
+    { KIOU_HOOK_NAME_HEADER_PROVIDER_SET_OR_UPDATE_HEADER, KIOU_HOOK_ID_HEADER_PROVIDER_SET_OR_UPDATE_HEADER, KIOU_HOOK_RVA_HEADER_PROVIDER_SET_OR_UPDATE_HEADER },
     // KiouEditor sites (1.0.1, CAVE_ENTRY):
     { KIOU_HOOK_NAME_SYNC_ITEM_LIST_MERGE,        KIOU_HOOK_ID_SYNC_ITEM_LIST_MERGE,        KIOU_HOOK_RVA_SYNC_ITEM_LIST_MERGE        },
     { KIOU_HOOK_NAME_COLLECTION_PRESET_MERGE,     KIOU_HOOK_ID_COLLECTION_PRESET_MERGE,     KIOU_HOOK_RVA_COLLECTION_PRESET_MERGE     },
