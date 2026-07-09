@@ -55,7 +55,16 @@
 #define KIOU_HOOK_ENTRY_SLOT_BASE_RVA      0x091E91B8
 
 // Cave payload region (matches recipes/common.py + per-version CAVE_REGION).
+//
+// Version note: the default here matches KIOU 1.0.2's CAVE_REGION[0]
+// (recipes/v1_0_2.py). Consumers that target a different version must
+// override the macro on the compiler command line — the 1.0.1 tree
+// (recipes/v1_0_1.py) uses 0x8268024 for example. KiouForge targets
+// 1.0.2 and can rely on the default; KiouEditor (1.0.1) sets
+// -DKIOU_HOOK_CAVE_REGION_START=0x8268024 in its Makefile.
+#ifndef KIOU_HOOK_CAVE_REGION_START
 #define KIOU_HOOK_CAVE_REGION_START        0x826F5E8
+#endif
 #define KIOU_HOOK_CAVE_SIZE                84
 #define KIOU_HOOK_CAVE_BYPASS_OFFSET       (KIOU_HOOK_CAVE_SIZE - 8)
 

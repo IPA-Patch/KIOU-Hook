@@ -220,6 +220,8 @@ NSString *KIOUEditorFeatureLabel(KiouFeature f) {
     case KIOU_FEATURE_VOICE_UNLOCK:   return @"Voice Unlock";
     case KIOU_FEATURE_ASSIST_ENABLE:  return @"Assist Enable";
     case KIOU_FEATURE_DISABLE_AFK:    return @"Disable AFK";
+    case KIOU_FEATURE_INGAME_ANALYSIS:    return @"In-Game Analysis";
+    case KIOU_FEATURE_AI_SPECIAL_SUPPORT: return @"AI Special Support";
     default:                          return @"(unknown)";
     }
 }

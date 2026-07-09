@@ -126,6 +126,12 @@ typedef NS_ENUM(NSInteger, KiouFeature) {
     KIOU_FEATURE_VOICE_UNLOCK,       // Hook/VoiceUnlock + SyncItemList intimacy pin
     KIOU_FEATURE_ASSIST_ENABLE,      // Hook/AssistEnable force enabled + depth
     KIOU_FEATURE_DISABLE_AFK,        // Hook/AfkDisable suppress AFK warning + auto-surrender
+    // Consumer-owned tweak-specific features. Defined here so the shared
+    // KIOUEditorFeatureEnabled surface can gate them, but the hook bodies
+    // that consume these flags live in the consumer tweak (KiouEditor)
+    // because the sites are tweak-local and not part of the shared catalog.
+    KIOU_FEATURE_INGAME_ANALYSIS,    // KiouEditor Hook_AssistTune BSE.EvaluateAsync suppression
+    KIOU_FEATURE_AI_SPECIAL_SUPPORT, // KiouEditor Hook_AiSpecialSupport 棋桜覚醒 unlock (default off)
     KIOU_FEATURE_COUNT,
 };
 
