@@ -102,9 +102,11 @@ void KIOUEditorInstallAssistTuneHook(uintptr_t unityBase) {
     s_origBSE_ctor = (BSECtor_t)KIOUHookInstall(
         KIOU_HOOK_NAME_BSE_CTOR,
         (void *)hook_BSE_ctor, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_BSE_CTOR, hook_BSE_ctor);
     s_origBSE_ensureInit = (BSEEnsureInit_t)KIOUHookInstall(
         KIOU_HOOK_NAME_BSE_ENSURE_INITIALIZED,
         (void *)hook_BSE_ensureInit, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_BSE_ENSURE_INITIALIZED, hook_BSE_ensureInit);
     IPALog([NSString stringWithFormat:
             @"[ASSIST-TUNE] installed: BSE.ctor orig=%p EnsureInit orig=%p "
             @"(depth=%d skill=%d hash=%d MB)",

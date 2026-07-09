@@ -117,9 +117,11 @@ void KIOUEditorInstallSelectCharacterHook(uintptr_t unityBase) {
     s_origSelectCharacterAsync = (SelectCharacterAsync_t)KIOUHookInstall(
         KIOU_HOOK_NAME_SELECT_CHAR_ASYNC,
         (void *)hook_SelectCharacterAsync, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_SELECT_CHAR_ASYNC, hook_SelectCharacterAsync);
     s_origSelectCharacterReplyMerge = (ReplyMergeFrom_t)KIOUHookInstall(
         KIOU_HOOK_NAME_SELECT_CHAR_REPLY_MERGE,
         (void *)hook_SelectCharacterReplyMerge, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_SELECT_CHAR_REPLY_MERGE, hook_SelectCharacterReplyMerge);
     IPALog([NSString stringWithFormat:
             @"[SELECT] installed: Async orig=%p Reply.merge orig=%p "
             @"SAFE_ID=%d persisted=%d",

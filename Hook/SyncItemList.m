@@ -216,6 +216,7 @@ void KIOUEditorInstallSyncItemListHook(uintptr_t unityBase) {
     s_origSyncItemListReply_merge = (InternalMergeFrom_t)KIOUHookInstall(
         KIOU_HOOK_NAME_SYNC_ITEM_LIST_MERGE,
         (void *)hook_SyncItemListReply_merge, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_SYNC_ITEM_LIST_MERGE, hook_SyncItemListReply_merge);
     IPALog([NSString stringWithFormat:
             @"[SYNC-ITEM] installed: orig=%p",
             (void *)s_origSyncItemListReply_merge]);

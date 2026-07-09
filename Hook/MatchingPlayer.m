@@ -126,6 +126,7 @@ void KIOUEditorInstallMatchingPlayerHook(uintptr_t unityBase) {
     s_origMatchingPlayer_merge = (ReplyMergeFrom_t)KIOUHookInstall(
         KIOU_HOOK_NAME_MATCHING_PLAYER_MERGE,
         (void *)hook_MatchingPlayer_merge, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_MATCHING_PLAYER_MERGE, hook_MatchingPlayer_merge);
     NSString *configured = KIOUSelfUserId();
     IPALog([NSString stringWithFormat:
             @"[MATCH] installed: orig=%p self_user_id=%@",
