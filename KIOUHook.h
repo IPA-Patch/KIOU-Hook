@@ -201,46 +201,54 @@ enum kiou_hook_slot_id {
 #define KIOU_HOOK_RVA_BACK_TO_TITLE_RUN_ASYNC    0x5CFC394
 #define KIOU_HOOK_RVA_HEADER_PROVIDER_SET_OR_UPDATE_HEADER  0x5BD9EE8
 
-// --- KiouEditor hook sites (1.0.1 RVAs) ----------------------------------
-// These pin to KIOU 1.0.1 build 11 because KiouEditor is 1.0.1-only. If a
-// future port maps the same semantic site to a 1.0.2 RVA, the macros above
-// will need version-aware dispatch — for now KiouForge (1.0.2) callers
-// don't reference these.
-#define KIOU_HOOK_RVA_SYNC_ITEM_LIST_MERGE          0x5C37034
-#define KIOU_HOOK_RVA_COLLECTION_PRESET_MERGE       0x5C4065C
-#define KIOU_HOOK_RVA_SELECT_CHAR_ASYNC             0x5CA7C90
-#define KIOU_HOOK_RVA_SELECT_CHAR_REPLY_MERGE       0x5C26DCC
-#define KIOU_HOOK_RVA_MATCHING_PLAYER_MERGE         0x5B4CAEC
-#define KIOU_HOOK_RVA_HISTORY_DETAIL_MERGE          0x5C01328
-#define KIOU_HOOK_RVA_HISTORY_GET_PREMIUM           0x5C00D88
-#define KIOU_HOOK_RVA_KIFU_DETAIL_IS_PREMIUM        0x585B25C
-#define KIOU_HOOK_RVA_VOICE_PLAYER_SATISFIES        0x582B88C
-#define KIOU_HOOK_RVA_VOICE_CELL_GET_IS_LOCKED      0x584ADC0
-#define KIOU_HOOK_RVA_BSE_CTOR                      0x597A448
-#define KIOU_HOOK_RVA_BSE_ENSURE_INITIALIZED        0x597BAFC
-#define KIOU_HOOK_RVA_RBSUPPORT_GET_ENABLED         0x593E630
-#define KIOU_HOOK_RVA_RBSUPPORT_GET_DEPTH           0x593E650
-#define KIOU_HOOK_RVA_HOME_UTILITY_PRESENTER_CTOR   0x5A9F298
-#define KIOU_HOOK_RVA_UIBUTTONBASE_ONPOINTERCLICK   0x5DD1E08
-#define KIOU_HOOK_RVA_TITLE_SCENE_MOVENEXT          0x5DCC728
-#define KIOU_HOOK_RVA_GAME_ORCHESTRATOR_IS_AFK      0x59455D4
-#define KIOU_HOOK_RVA_BSE_EVALUATE_ASYNC            0x597B570
-// 棋桜覚醒 (AI Special Support) UI-unlock caves. 1.0.1 RVAs.
-#define KIOU_HOOK_RVA_MOVE_RESULT_CAN_USE_SPECIAL   0x5B4FE18
-#define KIOU_HOOK_RVA_MOVE_RESULT_FREE_REMAINING    0x5B4FDE8
-#define KIOU_HOOK_RVA_MOVE_RESULT_TICKET_REMAINING  0x5B4FDF8
-#define KIOU_HOOK_RVA_MP_FREE_REMAINING             0x5B4BC54
-#define KIOU_HOOK_RVA_MP_PAID_AVAILABLE             0x5B4BC64
+// --- KiouEditor hook sites (1.0.2 RVAs) ----------------------------------
+// KiouEditor targets KIOU 1.0.2 build 12 now that the refactor branch
+// realigned it with KiouForge. These values MUST mirror
+// recipes/v1_0_2.py SITES — the chinlan pipeline reads that recipe
+// directly, but the JB / jailed pipeline goes through
+// KIOUHookInstall → MSHookFunction with the RVA below. If they drift,
+// the JB / jailed hook lands on the wrong address and corrupts a
+// neighbour method (verified on-device: 1.0.1 TITLE_SCENE_MOVENEXT
+// = 0x5DCC728 lands inside TitleMenuPopupPresenter on 1.0.2, which
+// then crashed with a wild PC on the first popup).
+#define KIOU_HOOK_RVA_SYNC_ITEM_LIST_MERGE          0x5C3C29C
+#define KIOU_HOOK_RVA_COLLECTION_PRESET_MERGE       0x5C458C4
+#define KIOU_HOOK_RVA_SELECT_CHAR_ASYNC             0x5CACEF8
+#define KIOU_HOOK_RVA_SELECT_CHAR_REPLY_MERGE       0x5C2C034
+#define KIOU_HOOK_RVA_MATCHING_PLAYER_MERGE         0x5B51C3C
+#define KIOU_HOOK_RVA_HISTORY_DETAIL_MERGE          0x5C06590
+#define KIOU_HOOK_RVA_HISTORY_GET_PREMIUM           0x5C05FF0
+#define KIOU_HOOK_RVA_KIFU_DETAIL_IS_PREMIUM        0x585E000
+#define KIOU_HOOK_RVA_VOICE_PLAYER_SATISFIES        0x582E614
+#define KIOU_HOOK_RVA_VOICE_CELL_GET_IS_LOCKED      0x584DB64
+#define KIOU_HOOK_RVA_BSE_CTOR                      0x597E608
+#define KIOU_HOOK_RVA_BSE_ENSURE_INITIALIZED        0x5980890
+#define KIOU_HOOK_RVA_RBSUPPORT_GET_ENABLED         0x5942AA0
+#define KIOU_HOOK_RVA_RBSUPPORT_GET_DEPTH           0x5942AC0
+#define KIOU_HOOK_RVA_HOME_UTILITY_PRESENTER_CTOR   0x5AA4054
+#define KIOU_HOOK_RVA_UIBUTTONBASE_ONPOINTERCLICK   0x5DD7F54
+#define KIOU_HOOK_RVA_TITLE_SCENE_MOVENEXT          0x5DD2874
+#define KIOU_HOOK_RVA_GAME_ORCHESTRATOR_IS_AFK      0x594A034
+#define KIOU_HOOK_RVA_BSE_EVALUATE_ASYNC            0x5980304
+// 棋桜覚醒 (AI Special Support) UI-unlock caves. 1.0.2 RVAs.
+#define KIOU_HOOK_RVA_MOVE_RESULT_CAN_USE_SPECIAL   0x5B54F68
+#define KIOU_HOOK_RVA_MOVE_RESULT_FREE_REMAINING    0x5B54F38
+#define KIOU_HOOK_RVA_MOVE_RESULT_TICKET_REMAINING  0x5B54F48
+#define KIOU_HOOK_RVA_MP_FREE_REMAINING             0x5B50DA4
+#define KIOU_HOOK_RVA_MP_PAID_AVAILABLE             0x5B50DB4
 
-// --- Direct-ABI helper RVAs (1.0.1) --------------------------------------
+// --- Direct-ABI helper RVAs (1.0.2) --------------------------------------
 // Not hook sites; KiouEditor bodies look these up via KIOUHookSiteAddr to
-// call the underlying functions directly. NSS_SETHASHSIZE_DIRECT is the
-// 1.0.1 RVA of NativeSyncSession.SetHashSize — distinct from the
-// NSS_SETHASHSIZE hook above whose macro carries the 1.0.2 RVA used by
-// KiouForge. Catalog rows for these have hook_id = -1.
-#define KIOU_HOOK_RVA_NSS_SETHASHSIZE_DIRECT        0x5D320E0
-#define KIOU_HOOK_RVA_GAMEOBJECT_GETCOMPONENT       0x6BCA6AC
-#define KIOU_HOOK_RVA_RTU_WORLDTOSCREENPOINT        0x6F20040
+// call the underlying functions directly. Now aligned with the 1.0.2
+// binary the KiouEditor tweak targets. NSS_SETHASHSIZE_DIRECT and
+// NSS_SETHASHSIZE resolve to the same underlying method on 1.0.2
+// (0x5D379DC) — the DIRECT name is retained because Hook/AssistTune.m
+// looks it up under that catalog entry to invoke SetHashSize
+// verbatim (not as a redirected hook). Catalog rows for these still
+// have hook_id = -1 so KIOUHookInstall won't try to MSHookFunction them.
+#define KIOU_HOOK_RVA_NSS_SETHASHSIZE_DIRECT        0x5D379DC
+#define KIOU_HOOK_RVA_GAMEOBJECT_GETCOMPONENT       0x6BD07F8
+#define KIOU_HOOK_RVA_RTU_WORLDTOSCREENPOINT        0x6F2628C
 
 // ---------------------------------------------------------------------------
 // Dispatcher state — defined by the consumer's ChinlanDispatcher.m.
