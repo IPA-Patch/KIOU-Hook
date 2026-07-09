@@ -51,6 +51,12 @@ const char KIOU_HOOK_NAME_UIBUTTONBASE_ONPOINTERCLICK[]  = "uibuttonbase_on_poin
 const char KIOU_HOOK_NAME_TITLE_SCENE_MOVENEXT[]         = "title_scene_movenext";
 const char KIOU_HOOK_NAME_GAME_ORCHESTRATOR_IS_AFK[]     = "game_orchestrator_is_afk";
 const char KIOU_HOOK_NAME_BSE_EVALUATE_ASYNC[]           = "bse_evaluate_async";
+// 棋桜覚醒 (AI Special Support) UI-unlock hook names.
+const char KIOU_HOOK_NAME_MOVE_RESULT_CAN_USE_SPECIAL[]  = "move_result_can_use_special";
+const char KIOU_HOOK_NAME_MOVE_RESULT_FREE_REMAINING[]   = "move_result_free_remaining";
+const char KIOU_HOOK_NAME_MOVE_RESULT_TICKET_REMAINING[] = "move_result_ticket_remaining";
+const char KIOU_HOOK_NAME_MP_FREE_REMAINING[]            = "mp_free_remaining";
+const char KIOU_HOOK_NAME_MP_PAID_AVAILABLE[]            = "mp_paid_available";
 // Direct-ABI helpers (KiouEditor, 1.0.1). hook_id = -1 in the catalog.
 const char KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT[]       = "nss_set_hash_size_direct";
 const char KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT[]      = "game_object_get_component";
@@ -102,6 +108,12 @@ static const KIOUHookEntry kCatalog[] = {
     { KIOU_HOOK_NAME_TITLE_SCENE_MOVENEXT,        KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT,        KIOU_HOOK_RVA_TITLE_SCENE_MOVENEXT        },
     { KIOU_HOOK_NAME_GAME_ORCHESTRATOR_IS_AFK,    KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK,    KIOU_HOOK_RVA_GAME_ORCHESTRATOR_IS_AFK    },
     { KIOU_HOOK_NAME_BSE_EVALUATE_ASYNC,          KIOU_HOOK_ID_BSE_EVALUATE_ASYNC,          KIOU_HOOK_RVA_BSE_EVALUATE_ASYNC          },
+    // 棋桜覚醒 (AI Special Support) UI-unlock catalog rows.
+    { KIOU_HOOK_NAME_MOVE_RESULT_CAN_USE_SPECIAL, KIOU_HOOK_ID_MOVE_RESULT_CAN_USE_SPECIAL, KIOU_HOOK_RVA_MOVE_RESULT_CAN_USE_SPECIAL },
+    { KIOU_HOOK_NAME_MOVE_RESULT_FREE_REMAINING,  KIOU_HOOK_ID_MOVE_RESULT_FREE_REMAINING,  KIOU_HOOK_RVA_MOVE_RESULT_FREE_REMAINING  },
+    { KIOU_HOOK_NAME_MOVE_RESULT_TICKET_REMAINING,KIOU_HOOK_ID_MOVE_RESULT_TICKET_REMAINING,KIOU_HOOK_RVA_MOVE_RESULT_TICKET_REMAINING},
+    { KIOU_HOOK_NAME_MP_FREE_REMAINING,           KIOU_HOOK_ID_MP_FREE_REMAINING,           KIOU_HOOK_RVA_MP_FREE_REMAINING           },
+    { KIOU_HOOK_NAME_MP_PAID_AVAILABLE,           KIOU_HOOK_ID_MP_PAID_AVAILABLE,           KIOU_HOOK_RVA_MP_PAID_AVAILABLE           },
     // Direct-call sites (no chinlan cave / no hook id):
     { KIOU_HOOK_NAME_BACK_TO_TITLE_RUN_ASYNC,     -1,                                       KIOU_HOOK_RVA_BACK_TO_TITLE_RUN_ASYNC     },
     { KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT,      -1,                                       KIOU_HOOK_RVA_NSS_SETHASHSIZE_DIRECT      },

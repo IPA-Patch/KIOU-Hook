@@ -92,6 +92,12 @@ HOOK_IDS: dict[str, int] = {
     "KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT":         32,
     "KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK":     33,
     "KIOU_HOOK_ID_BSE_EVALUATE_ASYNC":           34,
+    # KiouEditor CAVE_ENTRY hooks for 棋桜覚醒 (AI Special Support) UI unlock.
+    "KIOU_HOOK_ID_MOVE_RESULT_CAN_USE_SPECIAL":  35,
+    "KIOU_HOOK_ID_MOVE_RESULT_FREE_REMAINING":   36,
+    "KIOU_HOOK_ID_MOVE_RESULT_TICKET_REMAINING": 37,
+    "KIOU_HOOK_ID_MP_FREE_REMAINING":            38,
+    "KIOU_HOOK_ID_MP_PAID_AVAILABLE":            39,
 }
 
 # Entry slot indices — one per CAVE_ENTRY row, must mirror KIOUHook.h.
@@ -128,10 +134,16 @@ ENTRY_SLOT_INDEX: dict[str, int] = {
     "KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT":         27,
     "KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK":     28,
     "KIOU_HOOK_ID_BSE_EVALUATE_ASYNC":           29,
+    # KiouEditor CAVE_ENTRY slots for 棋桜覚醒 (AI Special Support) UI unlock.
+    "KIOU_HOOK_ID_MOVE_RESULT_CAN_USE_SPECIAL":  30,
+    "KIOU_HOOK_ID_MOVE_RESULT_FREE_REMAINING":   31,
+    "KIOU_HOOK_ID_MOVE_RESULT_TICKET_REMAINING": 32,
+    "KIOU_HOOK_ID_MP_FREE_REMAINING":            33,
+    "KIOU_HOOK_ID_MP_PAID_AVAILABLE":            34,
 }
 
-ENTRY_SLOT_COUNT    = 30
-ENTRY_SLOT_CAPACITY = 32   # reserved sibling room for future entry hooks
+ENTRY_SLOT_COUNT    = 35
+ENTRY_SLOT_CAPACITY = 40   # reserved sibling room for future entry hooks
 
 # ---------------------------------------------------------------------------
 # Cave payload builders

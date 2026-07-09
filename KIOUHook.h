@@ -42,13 +42,19 @@
 // pointer, BLRs it with W6 = hook_id, and routes through dispatch_one.
 //
 // Placement: sits inside __DATA.__common just past the entry-slot table
-// capacity (ENTRY_SLOT_BASE_RVA + ENTRY_SLOT_CAPACITY * 8 = 0x091E92B8).
+// capacity (ENTRY_SLOT_BASE_RVA + ENTRY_SLOT_CAPACITY * 8 = 0x091E93B8).
 // The old 0x8F90C80 landed in __DATA.__bss, which UnityRuntime / il2cpp
 // overwrites during lazy init — publishing dispatch_one there survived
 // startup but got clobbered before the first observer fire, so the cave
 // BLR X16 jumped to garbage and crashed with a PC alignment fault. See
 // recipes/v1_0_2.py for the __common vs __bss note.
-#define KIOU_HOOK_OBSERVER_SLOT_RVA            0x091E92B8
+//
+// History: this originally sat at 0x091E92B8 (ENTRY_SLOT_CAPACITY = 32).
+// Adding the 5 AI-Special-Support caves pushed the count past 32, so
+// capacity moved to 40 and the observer slot slid forward by 0x100 to
+// 0x091E93B8 — still comfortably inside __common (which ends at
+// 0x091F5978 on both 1.0.1 and 1.0.2).
+#define KIOU_HOOK_OBSERVER_SLOT_RVA            0x091E93B8
 
 // Entry-cave slot table. Slot N at +N*8 holds the function pointer the
 // CAVE_ENTRY cave BLRs directly (no dispatcher).
@@ -120,6 +126,11 @@ enum kiou_hook_id {
     KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT,
     KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK,
     KIOU_HOOK_ID_BSE_EVALUATE_ASYNC,
+    KIOU_HOOK_ID_MOVE_RESULT_CAN_USE_SPECIAL,
+    KIOU_HOOK_ID_MOVE_RESULT_FREE_REMAINING,
+    KIOU_HOOK_ID_MOVE_RESULT_TICKET_REMAINING,
+    KIOU_HOOK_ID_MP_FREE_REMAINING,
+    KIOU_HOOK_ID_MP_PAID_AVAILABLE,
 
     KIOU_HOOK_ID__COUNT,
 };
@@ -159,6 +170,11 @@ enum kiou_hook_slot_id {
     KIOU_HOOK_SLOT_TITLE_SCENE_MOVENEXT,
     KIOU_HOOK_SLOT_GAME_ORCHESTRATOR_IS_AFK,
     KIOU_HOOK_SLOT_BSE_EVALUATE_ASYNC,
+    KIOU_HOOK_SLOT_MOVE_RESULT_CAN_USE_SPECIAL,
+    KIOU_HOOK_SLOT_MOVE_RESULT_FREE_REMAINING,
+    KIOU_HOOK_SLOT_MOVE_RESULT_TICKET_REMAINING,
+    KIOU_HOOK_SLOT_MP_FREE_REMAINING,
+    KIOU_HOOK_SLOT_MP_PAID_AVAILABLE,
 
     KIOU_HOOK_SLOT__COUNT,
 };
@@ -209,6 +225,12 @@ enum kiou_hook_slot_id {
 #define KIOU_HOOK_RVA_TITLE_SCENE_MOVENEXT          0x5DCC728
 #define KIOU_HOOK_RVA_GAME_ORCHESTRATOR_IS_AFK      0x59455D4
 #define KIOU_HOOK_RVA_BSE_EVALUATE_ASYNC            0x597B570
+// 棋桜覚醒 (AI Special Support) UI-unlock caves. 1.0.1 RVAs.
+#define KIOU_HOOK_RVA_MOVE_RESULT_CAN_USE_SPECIAL   0x5B4FE18
+#define KIOU_HOOK_RVA_MOVE_RESULT_FREE_REMAINING    0x5B4FDE8
+#define KIOU_HOOK_RVA_MOVE_RESULT_TICKET_REMAINING  0x5B4FDF8
+#define KIOU_HOOK_RVA_MP_FREE_REMAINING             0x5B4BC54
+#define KIOU_HOOK_RVA_MP_PAID_AVAILABLE             0x5B4BC64
 
 // --- Direct-ABI helper RVAs (1.0.1) --------------------------------------
 // Not hook sites; KiouEditor bodies look these up via KIOUHookSiteAddr to
@@ -282,6 +304,11 @@ extern const char KIOU_HOOK_NAME_UIBUTTONBASE_ONPOINTERCLICK[];
 extern const char KIOU_HOOK_NAME_TITLE_SCENE_MOVENEXT[];
 extern const char KIOU_HOOK_NAME_GAME_ORCHESTRATOR_IS_AFK[];
 extern const char KIOU_HOOK_NAME_BSE_EVALUATE_ASYNC[];
+extern const char KIOU_HOOK_NAME_MOVE_RESULT_CAN_USE_SPECIAL[];
+extern const char KIOU_HOOK_NAME_MOVE_RESULT_FREE_REMAINING[];
+extern const char KIOU_HOOK_NAME_MOVE_RESULT_TICKET_REMAINING[];
+extern const char KIOU_HOOK_NAME_MP_FREE_REMAINING[];
+extern const char KIOU_HOOK_NAME_MP_PAID_AVAILABLE[];
 // Direct-ABI helper lookups (KiouEditor, 1.0.1). hook_id = -1 in the catalog.
 extern const char KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT[];
 extern const char KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT[];
