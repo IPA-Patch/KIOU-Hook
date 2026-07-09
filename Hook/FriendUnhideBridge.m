@@ -321,13 +321,13 @@ void *transformChildByName(void *parentTf, const char *targetName) {
     return NULL;
 }
 
-// GameObject.GetComponent(string type) at UnityFramework + 0x6BCA6AC. The
-// codegen wrapper here is a thin FreeFunction marshal to native
-// Scripting::GetScriptingWrapperOfComponentOfGameObject - probably ignores
-// MethodInfo* so passing NULL is OK. If it crashes we'll revisit with proper
-// klass-walked MethodInfo* resolution.
-#define RVA_GO_GETCOMPONENT_STRING 0x6BCA6AC
-
+// GameObject.GetComponent(string type). The codegen wrapper here is a thin
+// FreeFunction marshal to native
+// Scripting::GetScriptingWrapperOfComponentOfGameObject — probably ignores
+// MethodInfo* so passing NULL is OK. The site address is resolved via
+// KIOUHookSiteAddr against the version-appropriate catalog entry
+// (KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT) rather than hard-coded, so this
+// stays correct across 1.0.1 / 1.0.2 builds without a per-tweak repin.
 typedef void *(*GO_GetComponent_string_directABI_t)(void *thisGo, void *typeStr, void *methodInfo);
 
 void *componentByTypeName(void *gameObject, const char *typeName) {
@@ -335,8 +335,11 @@ void *componentByTypeName(void *gameObject, const char *typeName) {
     if (!p_il2cpp_string_new || g_unityBaseAddr == 0) return NULL;
     void *typeStr = p_il2cpp_string_new(typeName);
     if (!typeStr) return NULL;
+    uintptr_t addr = KIOUHookSiteAddr(
+        KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT, g_unityBaseAddr);
+    if (addr == 0) return NULL;
     GO_GetComponent_string_directABI_t fn =
-        (GO_GetComponent_string_directABI_t)(g_unityBaseAddr + RVA_GO_GETCOMPONENT_STRING);
+        (GO_GetComponent_string_directABI_t)addr;
     return fn(gameObject, typeStr, NULL);
 }
 

@@ -23,19 +23,22 @@ typedef UVec2 (*Rt_get_sizeDelta_HFA_t)(void *self, void *methodInfo);
 static void *g_method_Tf_get_position  = NULL;
 static void *g_method_Rt_get_sizeDelta = NULL;
 
-// RectTransformUtility.WorldToScreenPoint(Camera cam, Vector3 worldPoint)
-// at UnityFramework + 0x6F20040. Static, takes a null camera for
-// ScreenSpaceOverlay canvases and returns the screen pixel position with
-// bottom-left origin. Direct call with NULL methodInfo - same pattern as
-// GameObject.GetComponent(string) which we proved out earlier.
-#define RVA_RTU_WORLD_TO_SCREEN 0x6F20040
+// RectTransformUtility.WorldToScreenPoint(Camera cam, Vector3 worldPoint).
+// Static, takes a null camera for ScreenSpaceOverlay canvases and returns
+// the screen pixel position with bottom-left origin. Direct call with
+// NULL methodInfo — same pattern as GameObject.GetComponent(string). The
+// site address is resolved via KIOUHookSiteAddr against the
+// version-appropriate catalog entry (KIOU_HOOK_NAME_RTU_WORLDTOSCREENPOINT)
+// rather than hard-coded, so it stays correct across 1.0.1 / 1.0.2.
 typedef UVec2 (*RtU_WorldToScreenPoint_t)(void *cam, UVec3 worldPoint, void *methodInfo);
 
 static UVec2 unityWorldToScreen(UVec3 worldPoint) {
     UVec2 zero = {0};
     if (g_unityBaseAddr == 0) return zero;
-    RtU_WorldToScreenPoint_t fn =
-        (RtU_WorldToScreenPoint_t)(g_unityBaseAddr + RVA_RTU_WORLD_TO_SCREEN);
+    uintptr_t addr = KIOUHookSiteAddr(
+        KIOU_HOOK_NAME_RTU_WORLDTOSCREENPOINT, g_unityBaseAddr);
+    if (addr == 0) return zero;
+    RtU_WorldToScreenPoint_t fn = (RtU_WorldToScreenPoint_t)addr;
     return fn(NULL, worldPoint, NULL);
 }
 
