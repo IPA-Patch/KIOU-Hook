@@ -57,6 +57,10 @@ const char KIOU_HOOK_NAME_MOVE_RESULT_FREE_REMAINING[]   = "move_result_free_rem
 const char KIOU_HOOK_NAME_MOVE_RESULT_TICKET_REMAINING[] = "move_result_ticket_remaining";
 const char KIOU_HOOK_NAME_MP_FREE_REMAINING[]            = "mp_free_remaining";
 const char KIOU_HOOK_NAME_MP_PAID_AVAILABLE[]            = "mp_paid_available";
+// Matching-seat filter (KiouEditor, ported from KiouEngineBridge).
+const char KIOU_HOOK_NAME_MATCH_GET_VALID_FOUND[]           = "match_get_valid_found";
+const char KIOU_HOOK_NAME_MATCH_RECEIVE_TIMEOUT_MOVENEXT[]  = "match_receive_timeout_movenext";
+const char KIOU_HOOK_NAME_MATCH_STREAM_ARGS_CREATE[]        = "match_stream_args_create";
 // Direct-ABI helpers (KiouEditor, 1.0.1). hook_id = -1 in the catalog.
 const char KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT[]       = "nss_set_hash_size_direct";
 const char KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT[]      = "game_object_get_component";
@@ -114,6 +118,10 @@ static const KIOUHookEntry kCatalog[] = {
     { KIOU_HOOK_NAME_MOVE_RESULT_TICKET_REMAINING,KIOU_HOOK_ID_MOVE_RESULT_TICKET_REMAINING,KIOU_HOOK_RVA_MOVE_RESULT_TICKET_REMAINING},
     { KIOU_HOOK_NAME_MP_FREE_REMAINING,           KIOU_HOOK_ID_MP_FREE_REMAINING,           KIOU_HOOK_RVA_MP_FREE_REMAINING           },
     { KIOU_HOOK_NAME_MP_PAID_AVAILABLE,           KIOU_HOOK_ID_MP_PAID_AVAILABLE,           KIOU_HOOK_RVA_MP_PAID_AVAILABLE           },
+    // Matching-seat filter catalog rows.
+    { KIOU_HOOK_NAME_MATCH_GET_VALID_FOUND,          KIOU_HOOK_ID_MATCH_GET_VALID_FOUND,          KIOU_HOOK_RVA_MATCH_GET_VALID_FOUND          },
+    { KIOU_HOOK_NAME_MATCH_RECEIVE_TIMEOUT_MOVENEXT, KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT, KIOU_HOOK_RVA_MATCH_RECEIVE_TIMEOUT_MOVENEXT },
+    { KIOU_HOOK_NAME_MATCH_STREAM_ARGS_CREATE,       KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE,       KIOU_HOOK_RVA_MATCH_STREAM_ARGS_CREATE       },
     // Direct-call sites (no chinlan cave / no hook id):
     { KIOU_HOOK_NAME_BACK_TO_TITLE_RUN_ASYNC,     -1,                                       KIOU_HOOK_RVA_BACK_TO_TITLE_RUN_ASYNC     },
     { KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT,      -1,                                       KIOU_HOOK_RVA_NSS_SETHASHSIZE_DIRECT      },

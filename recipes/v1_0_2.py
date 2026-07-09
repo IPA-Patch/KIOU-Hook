@@ -96,5 +96,12 @@ SITES = [
     (0x5B54F48, "00c040b9", "KIOU_HOOK_ID_MOVE_RESULT_TICKET_REMAINING", CAVE_ENTRY, "ShogiMoveResultStatus.get_AiSpecialSupportRemainingTicketCount"),
     (0x5B50DA4, "006040b9", "KIOU_HOOK_ID_MP_FREE_REMAINING",            CAVE_ENTRY, "ShogiMatchingPlayerStatus.get_AiSpecialSupportFreeRemainingCount"),
     (0x5B50DB4, "006440b9", "KIOU_HOOK_ID_MP_PAID_AVAILABLE",            CAVE_ENTRY, "ShogiMatchingPlayerStatus.get_AiSpecialSupportPaidAvailableCount"),
+
+    # --- KiouEditor preferred-seat filter (ported from KiouEngineBridge). ----
+    # Reject a MatchFound if it puts the user on the "wrong" seat, then
+    # send ConnectionFailed to the matching server so it re-queues.
+    (0x5D0A78C, "ff0301d1", "KIOU_HOOK_ID_MATCH_GET_VALID_FOUND",          CAVE_ENTRY, "MatchingHandler.GetValidMatchFoundStatus"),
+    (0x5D0C408, "ff0303d1", "KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT", CAVE_ENTRY, "MatchingHandler+<ReceiveWithTimeoutAsync>d__6.MoveNext"),
+    (0x5BCF8CC, "fc6fbaa9", "KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE",       CAVE_ENTRY, "IShogiMatchStreamArgs.Create"),
 ]
 # fmt: on

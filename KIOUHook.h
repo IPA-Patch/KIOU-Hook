@@ -131,6 +131,10 @@ enum kiou_hook_id {
     KIOU_HOOK_ID_MOVE_RESULT_TICKET_REMAINING,
     KIOU_HOOK_ID_MP_FREE_REMAINING,
     KIOU_HOOK_ID_MP_PAID_AVAILABLE,
+    // Matching-seat filter (ported from KiouEngineBridge Hook_MatchingFilterObserve).
+    KIOU_HOOK_ID_MATCH_GET_VALID_FOUND,
+    KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT,
+    KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE,
 
     KIOU_HOOK_ID__COUNT,
 };
@@ -175,6 +179,9 @@ enum kiou_hook_slot_id {
     KIOU_HOOK_SLOT_MOVE_RESULT_TICKET_REMAINING,
     KIOU_HOOK_SLOT_MP_FREE_REMAINING,
     KIOU_HOOK_SLOT_MP_PAID_AVAILABLE,
+    KIOU_HOOK_SLOT_MATCH_GET_VALID_FOUND,
+    KIOU_HOOK_SLOT_MATCH_RECEIVE_TIMEOUT_MOVENEXT,
+    KIOU_HOOK_SLOT_MATCH_STREAM_ARGS_CREATE,
 
     KIOU_HOOK_SLOT__COUNT,
 };
@@ -236,6 +243,10 @@ enum kiou_hook_slot_id {
 #define KIOU_HOOK_RVA_MOVE_RESULT_TICKET_REMAINING  0x5B54F48
 #define KIOU_HOOK_RVA_MP_FREE_REMAINING             0x5B50DA4
 #define KIOU_HOOK_RVA_MP_PAID_AVAILABLE             0x5B50DB4
+// Matching-seat filter (1.0.2 RVAs). Ported from KiouEngineBridge Hook_MatchingFilterObserve.
+#define KIOU_HOOK_RVA_MATCH_GET_VALID_FOUND           0x5D0A78C
+#define KIOU_HOOK_RVA_MATCH_RECEIVE_TIMEOUT_MOVENEXT  0x5D0C408
+#define KIOU_HOOK_RVA_MATCH_STREAM_ARGS_CREATE        0x5BCF8CC
 
 // --- Direct-ABI helper RVAs (1.0.2) --------------------------------------
 // Not hook sites; KiouEditor bodies look these up via KIOUHookSiteAddr to
@@ -317,6 +328,9 @@ extern const char KIOU_HOOK_NAME_MOVE_RESULT_FREE_REMAINING[];
 extern const char KIOU_HOOK_NAME_MOVE_RESULT_TICKET_REMAINING[];
 extern const char KIOU_HOOK_NAME_MP_FREE_REMAINING[];
 extern const char KIOU_HOOK_NAME_MP_PAID_AVAILABLE[];
+extern const char KIOU_HOOK_NAME_MATCH_GET_VALID_FOUND[];
+extern const char KIOU_HOOK_NAME_MATCH_RECEIVE_TIMEOUT_MOVENEXT[];
+extern const char KIOU_HOOK_NAME_MATCH_STREAM_ARGS_CREATE[];
 // Direct-ABI helper lookups (KiouEditor, 1.0.1). hook_id = -1 in the catalog.
 extern const char KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT[];
 extern const char KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT[];
