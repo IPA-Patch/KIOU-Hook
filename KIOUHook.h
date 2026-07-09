@@ -119,6 +119,7 @@ enum kiou_hook_id {
     KIOU_HOOK_ID_UIBUTTONBASE_ONPOINTERCLICK,
     KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT,
     KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK,
+    KIOU_HOOK_ID_BSE_EVALUATE_ASYNC,
 
     KIOU_HOOK_ID__COUNT,
 };
@@ -157,6 +158,7 @@ enum kiou_hook_slot_id {
     KIOU_HOOK_SLOT_UIBUTTONBASE_ONPOINTERCLICK,
     KIOU_HOOK_SLOT_TITLE_SCENE_MOVENEXT,
     KIOU_HOOK_SLOT_GAME_ORCHESTRATOR_IS_AFK,
+    KIOU_HOOK_SLOT_BSE_EVALUATE_ASYNC,
 
     KIOU_HOOK_SLOT__COUNT,
 };
@@ -206,6 +208,7 @@ enum kiou_hook_slot_id {
 #define KIOU_HOOK_RVA_UIBUTTONBASE_ONPOINTERCLICK   0x5DD1E08
 #define KIOU_HOOK_RVA_TITLE_SCENE_MOVENEXT          0x5DCC728
 #define KIOU_HOOK_RVA_GAME_ORCHESTRATOR_IS_AFK      0x59455D4
+#define KIOU_HOOK_RVA_BSE_EVALUATE_ASYNC            0x597B570
 
 // --- Direct-ABI helper RVAs (1.0.1) --------------------------------------
 // Not hook sites; KiouEditor bodies look these up via KIOUHookSiteAddr to
@@ -278,6 +281,7 @@ extern const char KIOU_HOOK_NAME_HOME_UTILITY_PRESENTER_CTOR[];
 extern const char KIOU_HOOK_NAME_UIBUTTONBASE_ONPOINTERCLICK[];
 extern const char KIOU_HOOK_NAME_TITLE_SCENE_MOVENEXT[];
 extern const char KIOU_HOOK_NAME_GAME_ORCHESTRATOR_IS_AFK[];
+extern const char KIOU_HOOK_NAME_BSE_EVALUATE_ASYNC[];
 // Direct-ABI helper lookups (KiouEditor, 1.0.1). hook_id = -1 in the catalog.
 extern const char KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT[];
 extern const char KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT[];

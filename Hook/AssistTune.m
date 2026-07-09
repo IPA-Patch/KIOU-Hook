@@ -33,11 +33,13 @@
 
 typedef void (*BSECtor_t)(void *self, void *evalPath, void *settings);
 typedef void (*BSEEnsureInit_t)(void *self);
+typedef void (*BSEEvaluateAsync_t)(void *self, void *position, void *methodInfo);
 typedef void (*NSS_SetHashSize_directABI_t)(void *thisSession, int32_t mb, void *methodInfo);
 
-static BSECtor_t       s_origBSE_ctor        = NULL;
-static BSEEnsureInit_t s_origBSE_ensureInit  = NULL;
-static uintptr_t       g_unityBaseForAssist  = 0;
+static BSECtor_t          s_origBSE_ctor           = NULL;
+static BSEEnsureInit_t    s_origBSE_ensureInit     = NULL;
+static BSEEvaluateAsync_t s_origBSE_evaluateAsync  = NULL;
+static uintptr_t          g_unityBaseForAssist     = 0;
 
 static void hook_BSE_ctor(void *self, void *evalPath, void *settings) {
     if (s_origBSE_ctor) {
@@ -97,6 +99,19 @@ static void hook_BSE_ensureInit(void *self) {
     }
 }
 
+// BSE.EvaluateAsync — drop the on-device NNUE evaluation entirely when the
+// user has KIOU_FEATURE_INGAME_ANALYSIS off. The BSE object stays allocated
+// so surrounding lifecycle code is unaffected; only the expensive search
+// path is suppressed, which quiets the CPU and prevents device heating.
+static void hook_BSE_evaluate_async(void *self, void *position, void *methodInfo) {
+    if (!KIOUEditorFeatureEnabled(KIOU_FEATURE_INGAME_ANALYSIS)) {
+        return;
+    }
+    if (s_origBSE_evaluateAsync) {
+        s_origBSE_evaluateAsync(self, position, methodInfo);
+    }
+}
+
 void KIOUEditorInstallAssistTuneHook(uintptr_t unityBase) {
     g_unityBaseForAssist = unityBase;
     s_origBSE_ctor = (BSECtor_t)KIOUHookInstall(
@@ -107,10 +122,17 @@ void KIOUEditorInstallAssistTuneHook(uintptr_t unityBase) {
         KIOU_HOOK_NAME_BSE_ENSURE_INITIALIZED,
         (void *)hook_BSE_ensureInit, unityBase);
     KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_BSE_ENSURE_INITIALIZED, hook_BSE_ensureInit);
+    s_origBSE_evaluateAsync = (BSEEvaluateAsync_t)KIOUHookInstall(
+        KIOU_HOOK_NAME_BSE_EVALUATE_ASYNC,
+        (void *)hook_BSE_evaluate_async, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_BSE_EVALUATE_ASYNC, hook_BSE_evaluate_async);
     IPALog([NSString stringWithFormat:
             @"[ASSIST-TUNE] installed: BSE.ctor orig=%p EnsureInit orig=%p "
-            @"(depth=%d skill=%d hash=%d MB)",
+            @"EvaluateAsync orig=%p (depth=%d skill=%d hash=%d MB, "
+            @"INGAME_ANALYSIS gate=%d)",
             (void *)s_origBSE_ctor, (void *)s_origBSE_ensureInit,
+            (void *)s_origBSE_evaluateAsync,
             (int)KIOUEditorAssistDepth(), (int)KIOUEditorAssistSkillLevel(),
-            (int)KIOUEditorAssistHashMB()]);
+            (int)KIOUEditorAssistHashMB(),
+            (int)KIOUEditorFeatureEnabled(KIOU_FEATURE_INGAME_ANALYSIS)]);
 }

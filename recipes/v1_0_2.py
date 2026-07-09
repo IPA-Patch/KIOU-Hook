@@ -8,7 +8,12 @@ from recipes.common import CAVE_ENTRY, CAVE_OBSERVER
 BUILD = 12
 
 # Cave payload region (zero-fill tail of UnityFramework __TEXT).
-CAVE_REGION         = (0x826F5E8, 0x8274000)
+# Starts *after* __oslogstring (0x8270000..0x8270023) — the region between
+# __eh_frame end (0x826F5E8) and 0x8270000 is only 0xA18 B (~30 caves)
+# and the 30th and 31st caves straddled the __oslogstring bytes. The
+# post-__oslogstring pad is 0x3FDC B (~194 caves), enough for all 34
+# SITES with zero collision.
+CAVE_REGION         = (0x8270024, 0x8274000)
 
 # Observer dispatcher slot — chinlan caves load this single 8-byte pointer.
 # Sits just past the entry-slot table inside __DATA.__common. The old
@@ -82,5 +87,6 @@ SITES = [
     (0x5DD7F54, "f44fbea9", "KIOU_HOOK_ID_UIBUTTONBASE_ONPOINTERCLICK", CAVE_ENTRY, "UIButtonBase.OnPointerClick"),
     (0x5DD2874, "ff0303d1", "KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT",        CAVE_ENTRY, "TitleScene+<OnActivateAsync>d__10.MoveNext"),
     (0x594A034, "f44fbea9", "KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK",    CAVE_ENTRY, "GameOrchestrator.IsAfkEnabled"),
+    (0x5980304, "ff8302d1", "KIOU_HOOK_ID_BSE_EVALUATE_ASYNC",          CAVE_ENTRY, "BeginnerSupportEvaluator.EvaluateAsync"),
 ]
 # fmt: on
