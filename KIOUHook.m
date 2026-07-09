@@ -50,6 +50,7 @@ const char KIOU_HOOK_NAME_HOME_UTILITY_PRESENTER_CTOR[]  = "home_utility_present
 const char KIOU_HOOK_NAME_UIBUTTONBASE_ONPOINTERCLICK[]  = "uibuttonbase_on_pointer_click";
 const char KIOU_HOOK_NAME_TITLE_SCENE_MOVENEXT[]         = "title_scene_movenext";
 const char KIOU_HOOK_NAME_GAME_ORCHESTRATOR_IS_AFK[]     = "game_orchestrator_is_afk";
+const char KIOU_HOOK_NAME_BSE_EVALUATE_ASYNC[]           = "bse_evaluate_async";
 // Direct-ABI helpers (KiouEditor, 1.0.1). hook_id = -1 in the catalog.
 const char KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT[]       = "nss_set_hash_size_direct";
 const char KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT[]      = "game_object_get_component";
@@ -100,6 +101,7 @@ static const KIOUHookEntry kCatalog[] = {
     { KIOU_HOOK_NAME_UIBUTTONBASE_ONPOINTERCLICK, KIOU_HOOK_ID_UIBUTTONBASE_ONPOINTERCLICK, KIOU_HOOK_RVA_UIBUTTONBASE_ONPOINTERCLICK },
     { KIOU_HOOK_NAME_TITLE_SCENE_MOVENEXT,        KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT,        KIOU_HOOK_RVA_TITLE_SCENE_MOVENEXT        },
     { KIOU_HOOK_NAME_GAME_ORCHESTRATOR_IS_AFK,    KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK,    KIOU_HOOK_RVA_GAME_ORCHESTRATOR_IS_AFK    },
+    { KIOU_HOOK_NAME_BSE_EVALUATE_ASYNC,          KIOU_HOOK_ID_BSE_EVALUATE_ASYNC,          KIOU_HOOK_RVA_BSE_EVALUATE_ASYNC          },
     // Direct-call sites (no chinlan cave / no hook id):
     { KIOU_HOOK_NAME_BACK_TO_TITLE_RUN_ASYNC,     -1,                                       KIOU_HOOK_RVA_BACK_TO_TITLE_RUN_ASYNC     },
     { KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT,      -1,                                       KIOU_HOOK_RVA_NSS_SETHASHSIZE_DIRECT      },
