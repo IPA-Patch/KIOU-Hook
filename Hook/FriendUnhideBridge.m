@@ -76,15 +76,15 @@ static void resolveIl2cppBridge(void) {
 // ---------------------------------------------------------------------------
 
 static void *g_method_get_gameObject     = NULL;  // Component.get_gameObject
-static void *g_method_get_transform      = NULL;  // Component.get_transform (cached off Component-derived obj)
+void        *g_method_get_transform      = NULL;  // Component.get_transform — shared with BridgeUI.m
 static void *g_method_GO_get_transform   = NULL;  // GameObject.get_transform
 static void *g_method_SetActive          = NULL;  // GameObject.SetActive
-static void *g_method_Instantiate2       = NULL;  // UnityEngine.Object.Instantiate(Object, Transform)
-static void *g_method_Instantiate1NonGen = NULL;  // UnityEngine.Object.Instantiate(Object) non-generic
+void        *g_method_Instantiate2       = NULL;  // UnityEngine.Object.Instantiate(Object, Transform) — shared with BridgeUI.m
+void        *g_method_Instantiate1NonGen = NULL;  // UnityEngine.Object.Instantiate(Object) non-generic — shared with BridgeUI.m
 static void *g_method_Tf_get_parent      = NULL;  // Transform.get_parent
 static void *g_method_Tf_SetParent       = NULL;  // Transform.SetParent(Transform,bool)
 static void *g_method_Tf_GetSiblingIndex = NULL;  // Transform.GetSiblingIndex
-static void *g_method_Tf_SetSiblingIndex = NULL;  // Transform.SetSiblingIndex(int)
+void        *g_method_Tf_SetSiblingIndex = NULL;  // Transform.SetSiblingIndex(int) — shared with BridgeUI.m
 static void *g_method_Tf_get_childCount  = NULL;  // Transform.get_childCount
 static void *g_method_Tf_GetChild        = NULL;  // Transform.GetChild(int)
 static void *g_method_Obj_get_name       = NULL;  // UnityEngine.Object.get_name
@@ -105,11 +105,6 @@ void *g_cloneGo = NULL;
 // HomeUtilityPresenter ctor fires, so it stays current across scene
 // re-entries.
 void *g_friendGo = NULL;
-
-// One-time guard for the Instantiate-method enumeration recon (Phase 2a
-// debug). After the first fire we know which method handle is the
-// non-generic Object.Instantiate so we do not need to re-walk every time.
-static bool g_reconLogged = false;
 
 // Invoke instance method 0-arg returning a managed object pointer.
 void *invoke0(void *method, void *obj) {
