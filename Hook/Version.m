@@ -83,6 +83,7 @@ void KIOUEditorInstallVersionHook(uintptr_t unityBase) {
     s_origTitleSceneMoveNext = (TitleSceneMoveNext_t)KIOUHookInstall(
         KIOU_HOOK_NAME_TITLE_SCENE_MOVENEXT,
         (void *)hook_TitleSceneMoveNext, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_TITLE_SCENE_MOVENEXT, hook_TitleSceneMoveNext);
     IPALog([NSString stringWithFormat:
             @"[VERSION] installed: orig=%p commit=%s",
             (void *)s_origTitleSceneMoveNext, KIOU_EDITOR_COMMIT]);

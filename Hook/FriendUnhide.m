@@ -1109,9 +1109,11 @@ void KIOUEditorInstallFriendUnhideHook(uintptr_t unityBase) {
     orig_HUP_ctor = (HUP_ctor_t)KIOUHookInstall(
         KIOU_HOOK_NAME_HOME_UTILITY_PRESENTER_CTOR,
         (void *)hook_HUP_ctor, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_HOME_UTILITY_PRESENTER_CTOR, hook_HUP_ctor);
     orig_UIBtn_OnPointerClick = (UIBtn_OnPointerClick_t)KIOUHookInstall(
         KIOU_HOOK_NAME_UIBUTTONBASE_ONPOINTERCLICK,
         (void *)hook_UIBtn_OnPointerClick, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_UIBUTTONBASE_ONPOINTERCLICK, hook_UIBtn_OnPointerClick);
 
     IPALog([NSString stringWithFormat:
             @"[FRIEND] installed: HUP.ctor orig=%p UIBtn.OnPointerClick orig=%p",

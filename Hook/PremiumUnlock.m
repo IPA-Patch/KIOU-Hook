@@ -73,12 +73,15 @@ void KIOUEditorInstallPremiumUnlockHook(uintptr_t unityBase) {
     s_origKifuDetailModel_IsPremiumUser = (IsPremiumUser_t)KIOUHookInstall(
         KIOU_HOOK_NAME_KIFU_DETAIL_IS_PREMIUM,
         (void *)hook_KifuDetailModel_IsPremiumUser, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_KIFU_DETAIL_IS_PREMIUM, hook_KifuDetailModel_IsPremiumUser);
     s_origHistoryDetailReply_merge = (ReplyMergeFrom_t)KIOUHookInstall(
         KIOU_HOOK_NAME_HISTORY_DETAIL_MERGE,
         (void *)hook_HistoryDetailReply_merge, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_HISTORY_DETAIL_MERGE, hook_HistoryDetailReply_merge);
     s_origHistoryDetailReply_IsPremiumUser = (IsPremiumUser_t)KIOUHookInstall(
         KIOU_HOOK_NAME_HISTORY_GET_PREMIUM,
         (void *)hook_HistoryDetailReply_IsPremiumUser, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_HISTORY_GET_PREMIUM, hook_HistoryDetailReply_IsPremiumUser);
     IPALog([NSString stringWithFormat:
             @"[PREMIUM] installed: KifuDetail.IsPremium orig=%p, "
             @"HistoryDetail.merge orig=%p, HistoryDetail.get_IsPremium orig=%p",

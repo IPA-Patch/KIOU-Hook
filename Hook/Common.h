@@ -163,6 +163,31 @@ void    KIOUEditorSetAssistHashIndex(int32_t idx);
 int32_t KIOUEditorAssistHashMB(void);
 
 // ---------------------------------------------------------------------------
+// Chinlan slot publish helper.
+//
+// KIOUHookInstall() on the chinlan branch does NOT write the entry slot the
+// cave will BLR through — it only returns the cave-bypass entry. Each hook
+// installer must therefore ALSO write its slot before UnityFramework's
+// first call reaches the cave. This macro keeps the pattern one-liner and
+// no-ops on JB / jailed where MSHookFunction already rewrote the site.
+//
+// Usage inside an installer:
+//   s_orig = (fn_t)KIOUHookInstall(NAME, (void *)hook_fn, unityBase);
+//   KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_X, hook_fn);
+// ---------------------------------------------------------------------------
+#if IPA_CHINLAN
+#define KIOU_HOOK_PUBLISH_SLOT(unityBase, slot_id, hook_fn) do {                 \
+    void * volatile *_entrySlots =                                                \
+        (void * volatile *)((unityBase) + KIOU_HOOK_ENTRY_SLOT_BASE_RVA);         \
+    _entrySlots[(slot_id)] = (void *)(hook_fn);                                   \
+} while (0)
+#else
+#define KIOU_HOOK_PUBLISH_SLOT(unityBase, slot_id, hook_fn) do {                 \
+    (void)(unityBase); (void)(slot_id); (void)(hook_fn);                          \
+} while (0)
+#endif
+
+// ---------------------------------------------------------------------------
 // Per-module hook installers. Each takes the UnityFramework base and calls
 // KIOUHookInstall for every site it owns. Safe to call multiple times;
 // guarded by KIOUHookInstall's own idempotency.

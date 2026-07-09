@@ -81,6 +81,7 @@ void KIOUEditorInstallCollectionHook(uintptr_t unityBase) {
     s_origCollectionPresetReply_merge = (InternalMergeFrom_t)KIOUHookInstall(
         KIOU_HOOK_NAME_COLLECTION_PRESET_MERGE,
         (void *)hook_CollectionPresetReply_merge, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_COLLECTION_PRESET_MERGE, hook_CollectionPresetReply_merge);
     IPALog([NSString stringWithFormat:
             @"[COLLECTION] installed: orig=%p (observation only)",
             (void *)s_origCollectionPresetReply_merge]);
