@@ -132,6 +132,7 @@ typedef NS_ENUM(NSInteger, KiouFeature) {
     // because the sites are tweak-local and not part of the shared catalog.
     KIOU_FEATURE_INGAME_ANALYSIS,    // KiouEditor Hook_AssistTune BSE.EvaluateAsync suppression
     KIOU_FEATURE_AI_SPECIAL_SUPPORT, // KiouEditor Hook_AiSpecialSupport 棋桜覚醒 unlock (default off)
+    KIOU_FEATURE_KIFU_AUTOSAVE,      // KiouEditor Kif/ pipeline — write .kif on OnMatchEndAsync
     KIOU_FEATURE_COUNT,
 };
 
