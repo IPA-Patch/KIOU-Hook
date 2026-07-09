@@ -59,3 +59,11 @@ void *findIconImageTransform(void *btnTf);
 // swapped onto the home clone via swapImageSpriteOnGo (Bridge.m).
 extern void *g_titleMenuSprite;
 bool swapImageSpriteOnGo(void *imageHostGo, void *newSprite, const char *tag);
+
+// il2cpp method-handle caches shared between the split. Defined in
+// FriendUnhideBridge.m; used from FriendUnhideBridgeUI.m as well because
+// the sibling / instantiate / get_transform paths span both files.
+extern void *g_method_get_transform;      // Component.get_transform
+extern void *g_method_Instantiate2;       // UnityEngine.Object.Instantiate(Object, Transform)
+extern void *g_method_Instantiate1NonGen; // UnityEngine.Object.Instantiate(Object) non-generic
+extern void *g_method_Tf_SetSiblingIndex; // Transform.SetSiblingIndex(int)
