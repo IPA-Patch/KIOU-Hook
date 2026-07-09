@@ -20,7 +20,7 @@ CAVE_REGION         = (0x8270024, 0x8274000)
 # 0x8F90C80 landed in __DATA.__bss, which il2cpp/UnityRuntime overwrites
 # during lazy init (verified crash: cave BLR X16 jumped to garbage after
 # publish). __common survives publish — entry slots (0x091E91B8..) do.
-HOOK_SLOT_RVA       = 0x091E92B8
+HOOK_SLOT_RVA       = 0x091E93B8
 PROBED_HOOK_SLOT_RVA = HOOK_SLOT_RVA
 
 # Entry-cave slot table — ENTRY_SLOT_BASE_RVA + idx*8 holds each hook fn ptr.
@@ -88,5 +88,13 @@ SITES = [
     (0x5DD2874, "ff0303d1", "KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT",        CAVE_ENTRY, "TitleScene+<OnActivateAsync>d__10.MoveNext"),
     (0x594A034, "f44fbea9", "KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK",    CAVE_ENTRY, "GameOrchestrator.IsAfkEnabled"),
     (0x5980304, "ff8302d1", "KIOU_HOOK_ID_BSE_EVALUATE_ASYNC",          CAVE_ENTRY, "BeginnerSupportEvaluator.EvaluateAsync"),
+
+    # --- KiouEditor 棋桜覚醒 (AI Special Support) UI-unlock caves. ------------
+    # Server-side reject on the network still applies; this is UI unlock only.
+    (0x5B54F68, "00204339", "KIOU_HOOK_ID_MOVE_RESULT_CAN_USE_SPECIAL",  CAVE_ENTRY, "ShogiMoveResultStatus.get_CanUseAiSpecialSupport"),
+    (0x5B54F38, "00bc40b9", "KIOU_HOOK_ID_MOVE_RESULT_FREE_REMAINING",   CAVE_ENTRY, "ShogiMoveResultStatus.get_AiSpecialSupportRemainingFreeCount"),
+    (0x5B54F48, "00c040b9", "KIOU_HOOK_ID_MOVE_RESULT_TICKET_REMAINING", CAVE_ENTRY, "ShogiMoveResultStatus.get_AiSpecialSupportRemainingTicketCount"),
+    (0x5B50DA4, "006040b9", "KIOU_HOOK_ID_MP_FREE_REMAINING",            CAVE_ENTRY, "ShogiMatchingPlayerStatus.get_AiSpecialSupportFreeRemainingCount"),
+    (0x5B50DB4, "006440b9", "KIOU_HOOK_ID_MP_PAID_AVAILABLE",            CAVE_ENTRY, "ShogiMatchingPlayerStatus.get_AiSpecialSupportPaidAvailableCount"),
 ]
 # fmt: on

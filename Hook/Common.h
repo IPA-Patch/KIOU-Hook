@@ -204,3 +204,4 @@ void KIOUEditorInstallSyncItemListHook(uintptr_t unityBase);
 void KIOUEditorInstallVersionHook(uintptr_t unityBase);
 void KIOUEditorInstallVoiceUnlockHook(uintptr_t unityBase);
 void KIOUEditorInstallFriendUnhideHook(uintptr_t unityBase);
+void KIOUEditorInstallAiSpecialSupportHook(uintptr_t unityBase);
