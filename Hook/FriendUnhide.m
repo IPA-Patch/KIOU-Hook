@@ -26,9 +26,6 @@
 // GameObject's klass, then cached for subsequent ctor fires.
 // ===========================================================================
 
-#define RVA_HOME_UTILITY_PRESENTER_CTOR 0x5A9F298
-#define RVA_UIBUTTONBASE_ONPOINTERCLICK 0x5DD1E08
-
 #define OFF_HUV_MENU_BUTTON   0x20
 #define OFF_HUV_GIFT_BUTTON   0x28
 #define OFF_HUV_FRIEND_BUTTON 0x38
