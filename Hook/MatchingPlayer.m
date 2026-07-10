@@ -74,13 +74,35 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
         int32_t curSkinId = dbgSkinId;
         int32_t curCharId = dbgCharId;
 
+        // Prefer KIOUActiveAccountUserId (refreshed on every AccountExists
+        // observation) over the heuristic-captured KIOUSelfUserId. On
+        // account switch (or when a stale self_user_id was captured by a
+        // previous install), the locked-in value can disagree with the
+        // active account — reconcile by adopting active as the new self.
+        NSString *activeUserId  = KIOUActiveAccountUserId();
         NSString *configuredSelf = KIOUSelfUserId();
+        if (activeUserId.length > 0 &&
+            configuredSelf.length > 0 &&
+            ![activeUserId isEqualToString:configuredSelf]) {
+            IPALog([NSString stringWithFormat:
+                    @"[MATCH] self_user_id stale (%@) -> refresh to active (%@)",
+                    configuredSelf, activeUserId]);
+            KIOUSetSelfUserId(activeUserId);
+            configuredSelf = activeUserId;
+        } else if (!configuredSelf && activeUserId.length > 0) {
+            IPALog([NSString stringWithFormat:
+                    @"[MATCH] self_user_id adopted from active: %@",
+                    activeUserId]);
+            KIOUSetSelfUserId(activeUserId);
+            configuredSelf = activeUserId;
+        }
         BOOL isSelf;
         if (configuredSelf) {
             isSelf = [userId isEqualToString:configuredSelf];
         } else {
-            // No locked-in self: assume the player carrying SAFE_ID is us
-            // (SelectCharacter forces every outgoing select to SAFE_ID).
+            // No locked-in self and no known active: assume the player
+            // carrying SAFE_ID is us (SelectCharacter forces every outgoing
+            // select to SAFE_ID).
             isSelf = (curSkinId == KIOU_SAFE_SKIN_ID);
         }
 
