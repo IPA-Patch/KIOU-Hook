@@ -163,6 +163,9 @@ void    KIOUEditorSetAssistSkillLevel(int32_t v);
 int32_t KIOUEditorAssistHashIndex(void);
 void    KIOUEditorSetAssistHashIndex(int32_t idx);
 int32_t KIOUEditorAssistHashMB(void);
+int32_t KIOUEditorAssistNodesIndex(void);
+void    KIOUEditorSetAssistNodesIndex(int32_t idx);
+int32_t KIOUEditorAssistNodesLimit(void);  // 0 == disabled
 
 // ---------------------------------------------------------------------------
 // Chinlan slot publish helper.
