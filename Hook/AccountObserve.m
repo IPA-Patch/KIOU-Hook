@@ -1,4 +1,5 @@
 #import "KIOUHook.h"
+#import "Hook/Common.h"
 #import "Account/Persistence.h"
 #import "il2cpp.h"
 #import "logging.h"
@@ -378,14 +379,19 @@ void KIOUInstallAccountObserveHook(uintptr_t unityBase) {
 
     s_origAccountExists = (AccountExists_t)
         KIOUHookInstall(KIOU_HOOK_NAME_ACCOUNT_EXISTS, (void *)KIOUHookAccountExists, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_ACCOUNT_EXISTS, KIOUHookAccountExists);
     s_origLoginArgsCreate = (LoginArgsCreate_t)
         KIOUHookInstall(KIOU_HOOK_NAME_LOGIN_ARGS_CREATE, (void *)KIOUHookLoginArgsCreate, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_LOGIN_ARGS_CREATE, KIOUHookLoginArgsCreate);
     s_origRegisterUserArgsCreate = (RegisterUserArgsCreate_t)
         KIOUHookInstall(KIOU_HOOK_NAME_REGISTER_USER_ARGS_CREATE, (void *)KIOUHookRegisterUserArgsCreate, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_REGISTER_USER_ARGS_CREATE, KIOUHookRegisterUserArgsCreate);
     s_origRunLoginSeqMoveNext = (MoveNextVoid_t)
         KIOUHookInstall(KIOU_HOOK_NAME_RUN_LOGIN_SEQ_MOVENEXT, (void *)KIOUHookRunLoginSeqMoveNext, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_RUN_LOGIN_SEQ_MOVENEXT, KIOUHookRunLoginSeqMoveNext);
     s_origGetSelfProfileMoveNext = (MoveNextVoid_t)
         KIOUHookInstall(KIOU_HOOK_NAME_GET_SELF_PROFILE_MOVENEXT, (void *)KIOUHookGetSelfProfileMoveNext, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_GET_SELF_PROFILE_MOVENEXT, KIOUHookGetSelfProfileMoveNext);
 
 #if IPA_CHINLAN
     (void)KF_RVA_RUN_RESET_USER_DATA_SEQ;
