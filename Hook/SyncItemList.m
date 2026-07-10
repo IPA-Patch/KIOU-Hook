@@ -60,6 +60,15 @@ static void hook_SyncItemListReply_merge(void *self, void *parseContext) {
         s_origSyncItemListReply_merge(self, parseContext);
     }
 
+    IPALog([NSString stringWithFormat:
+            @"[SyncItemListReply] fire: self=%p item=%s voice=%s char=%s "
+            @"persisted=%d reentrant=%d",
+            self,
+            KIOUEditorFeatureEnabled(KIOU_FEATURE_ITEM_UNLOCK)  ? "on" : "off",
+            KIOUEditorFeatureEnabled(KIOU_FEATURE_VOICE_UNLOCK) ? "on" : "off",
+            KIOUEditorFeatureEnabled(KIOU_FEATURE_CHAR_BYPASS)  ? "on" : "off",
+            KIOUEditorPersistedSelection(), g_inHook]);
+
     if (g_inHook) return;
     g_inHook = 1;
     @try {

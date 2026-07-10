@@ -50,7 +50,12 @@ static ReplyMergeFrom_t       s_origSelectCharacterReplyMerge = NULL;
 
 static void *hook_SelectCharacterAsync(void *self, void *args, void *opts,
                                        void *a3, void *a4, void *a5) {
-    if (!KIOUEditorFeatureEnabled(KIOU_FEATURE_CHAR_BYPASS)) {
+    bool gate = KIOUEditorFeatureEnabled(KIOU_FEATURE_CHAR_BYPASS);
+    int32_t requestedRaw = ptrLooksValid(args) ? readI32(args, OFF_ARGS_SKIN_ID) : -1;
+    IPALog([NSString stringWithFormat:
+            @"[SELECT][REQ] fire: feature=%s requested=%d persisted=%d",
+            gate ? "on" : "off", requestedRaw, KIOUEditorPersistedSelection()]);
+    if (!gate) {
         return s_origSelectCharacterAsync(self, args, opts, a3, a4, a5);
     }
     if (ptrLooksValid(args)) {
@@ -86,7 +91,11 @@ static void hook_SelectCharacterReplyMerge(void *self, void *parseContext) {
     if (s_origSelectCharacterReplyMerge) {
         s_origSelectCharacterReplyMerge(self, parseContext);
     }
-    if (!KIOUEditorFeatureEnabled(KIOU_FEATURE_CHAR_BYPASS)) return;
+    bool gate = KIOUEditorFeatureEnabled(KIOU_FEATURE_CHAR_BYPASS);
+    IPALog([NSString stringWithFormat:
+            @"[SELECT][RESP] fire: feature=%s self=%p persisted=%d",
+            gate ? "on" : "off", self, KIOUEditorPersistedSelection()]);
+    if (!gate) return;
     if (!ptrLooksValid(self)) return;
 
     @try {

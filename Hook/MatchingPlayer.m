@@ -53,16 +53,26 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
     if (s_origMatchingPlayer_merge) {
         s_origMatchingPlayer_merge(self, parseContext);
     }
-    if (!ptrLooksValid(self)) return;
+    if (!ptrLooksValid(self)) {
+        IPALog(@"[MATCH] fire: self ptr invalid");
+        return;
+    }
 
     @try {
         void *userIdStr = readPtr(self, OFF_MP_USER_ID);
         NSString *userId = il2cppStringToNSString(userIdStr);
+        int32_t dbgSkinId = readI32(self, OFF_MP_MST_SKIN_ID);
+        int32_t dbgCharId = readI32(self, OFF_MP_MST_CHAR_ID);
+        IPALog([NSString stringWithFormat:
+                @"[MATCH] fire: userId=%@ skin=%d char=%d persisted=%d",
+                userId.length ? userId : @"(empty)",
+                dbgSkinId, dbgCharId, KIOUEditorPersistedSelection()]);
+
         if (userId.length == 0) return;
         if ([userId isEqualToString:kCpuUserIdSentinel]) return;
 
-        int32_t curSkinId = readI32(self, OFF_MP_MST_SKIN_ID);
-        int32_t curCharId = readI32(self, OFF_MP_MST_CHAR_ID);
+        int32_t curSkinId = dbgSkinId;
+        int32_t curCharId = dbgCharId;
 
         NSString *configuredSelf = KIOUSelfUserId();
         BOOL isSelf;
