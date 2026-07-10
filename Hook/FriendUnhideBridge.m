@@ -57,7 +57,7 @@ static void resolveIl2cppBridge(void) {
     p_il2cpp_method_get_param_count = (il2cpp_method_get_param_count_t)dlsym(RTLD_DEFAULT, "il2cpp_method_get_param_count");
     p_il2cpp_method_is_generic = (il2cpp_method_is_generic_t)dlsym(RTLD_DEFAULT, "il2cpp_method_is_generic");
     IPALog([NSString stringWithFormat:
-              @"[HOME] il2cpp bridge: runtime_invoke=%p class_from_name=%p class_get_method_from_name=%p object_get_class=%p class_get_parent=%p class_get_methods=%p method_get_name=%p method_get_param_count=%p method_is_generic=%p",
+              @"[HOME] resolved: subject=il2cppBridge runtimeInvoke=%p classFromName=%p classGetMethodFromName=%p objectGetClass=%p classGetParent=%p classGetMethods=%p methodGetName=%p methodGetParamCount=%p methodIsGeneric=%p",
               p_il2cpp_runtime_invoke,
               p_il2cpp_class_from_name,
               p_il2cpp_class_get_method_from_name,
@@ -128,7 +128,7 @@ void *gameObjectOf(void *componentObj) {
         if (!klass) return NULL;
         g_method_get_gameObject = p_il2cpp_class_get_method_from_name(klass, "get_gameObject", 0);
         IPALog([NSString stringWithFormat:
-                  @"[HOME] cached get_gameObject method=%p (klass=%p)",
+                  @"[HOME] cached: method=Component.get_gameObject ptr=%p klass=%p",
                   g_method_get_gameObject, klass]);
     }
     return invoke0(g_method_get_gameObject, componentObj);
@@ -142,7 +142,7 @@ void setActive(void *gameObject, bool value) {
         if (!klass) return;
         g_method_SetActive = p_il2cpp_class_get_method_from_name(klass, "SetActive", 1);
         IPALog([NSString stringWithFormat:
-                  @"[HOME] cached SetActive method=%p (klass=%p)",
+                  @"[HOME] cached: method=GameObject.SetActive ptr=%p klass=%p",
                   g_method_SetActive, klass]);
     }
     invokeSetActive(g_method_SetActive, gameObject, value);
@@ -159,7 +159,7 @@ void *goTransformOf(void *gameObject) {
         if (!klass) return NULL;
         g_method_GO_get_transform = p_il2cpp_class_get_method_from_name(klass, "get_transform", 0);
         IPALog([NSString stringWithFormat:
-                  @"[HOME] cached GameObject.get_transform method=%p (klass=%p)",
+                  @"[HOME] cached: method=GameObject.get_transform ptr=%p klass=%p",
                   g_method_GO_get_transform, klass]);
     }
     return invoke0(g_method_GO_get_transform, gameObject);
@@ -174,7 +174,7 @@ void *transformParentOf(void *transformObj) {
         if (!klass) return NULL;
         g_method_Tf_get_parent = p_il2cpp_class_get_method_from_name(klass, "get_parent", 0);
         IPALog([NSString stringWithFormat:
-                  @"[HOME] cached Transform.get_parent method=%p (klass=%p)",
+                  @"[HOME] cached: method=Transform.get_parent ptr=%p klass=%p",
                   g_method_Tf_get_parent, klass]);
     }
     return invoke0(g_method_Tf_get_parent, transformObj);
@@ -195,17 +195,17 @@ void transformSetParent(void *transformObj, void *newParent, bool worldPositionS
         if (!klass) return;
         g_method_Tf_SetParent = p_il2cpp_class_get_method_from_name(klass, "SetParent", 2);
         IPALog([NSString stringWithFormat:
-                  @"[HOME] cached Transform.SetParent(Tf,bool) method=%p (klass=%p)",
+                  @"[HOME] cached: method=\"Transform.SetParent(Transform,bool)\" ptr=%p klass=%p",
                   g_method_Tf_SetParent, klass]);
     }
     if (!g_method_Tf_SetParent) return;
     void *methodPtr = *(void **)g_method_Tf_SetParent;
     if (!methodPtr) {
-        IPALog(@"[HOME] Tf.SetParent direct: methodPointer NULL");
+        IPALog(@"[HOME] skipped: at=Tf.SetParent reason=methodPointerNull");
         return;
     }
     IPALog([NSString stringWithFormat:
-              @"[HOME] Tf.SetParent direct: methodPtr=%p this=%p parent=%p wps=%d",
+              @"[HOME] fire: at=Tf.SetParent methodPtr=%p this=%p parent=%p wps=%d",
               methodPtr, transformObj, newParent, (int)worldPositionStays]);
     ((Tf_SetParent_directABI_t)methodPtr)(transformObj, newParent, worldPositionStays, g_method_Tf_SetParent);
 }
@@ -223,13 +223,13 @@ int32_t transformGetSiblingIndex(void *transformObj) {
         if (!klass) return -1;
         g_method_Tf_GetSiblingIndex = p_il2cpp_class_get_method_from_name(klass, "GetSiblingIndex", 0);
         IPALog([NSString stringWithFormat:
-                  @"[HOME] cached Transform.GetSiblingIndex method=%p (klass=%p)",
+                  @"[HOME] cached: method=Transform.GetSiblingIndex ptr=%p klass=%p",
                   g_method_Tf_GetSiblingIndex, klass]);
     }
     if (!g_method_Tf_GetSiblingIndex) return -1;
     void *methodPtr = *(void **)g_method_Tf_GetSiblingIndex;
     if (!methodPtr) {
-        IPALog(@"[HOME] Tf.GetSiblingIndex direct: methodPointer NULL");
+        IPALog(@"[HOME] skipped: at=Tf.GetSiblingIndex reason=methodPointerNull");
         return -1;
     }
     return ((Tf_GetSiblingIndex_directABI_t)methodPtr)(transformObj, g_method_Tf_GetSiblingIndex);
@@ -278,7 +278,7 @@ NSString *objectName(void *unityObj) {
         if (!klass) return nil;
         g_method_Obj_get_name = p_il2cpp_class_get_method_from_name(klass, "get_name", 0);
         IPALog([NSString stringWithFormat:
-                  @"[HOME] cached Object.get_name method=%p (klass=%p)",
+                  @"[HOME] cached: method=UnityEngine.Object.get_name ptr=%p klass=%p",
                   g_method_Obj_get_name, klass]);
     }
     if (!g_method_Obj_get_name) return nil;
@@ -298,7 +298,7 @@ void dumpHierarchy(void *tfObj, int depth, int maxDepth) {
     NSMutableString *indent = [NSMutableString string];
     for (int i = 0; i < depth; i++) [indent appendString:@"  "];
     IPALog([NSString stringWithFormat:
-              @"[HOME] hier %@tf=%p name=%@",
+              @"[HOME] dumped: subject=hierarchyNode indent=\"%@\" tf=%p name=%@",
               indent, tfObj, name ?: @"<null>"]);
     int32_t cc = transformChildCount(tfObj);
     for (int32_t i = 0; i < cc; i++) {
@@ -374,7 +374,7 @@ bool swapImageSpriteOnGo(void *imageHostGo, void *newSprite, const char *tag) {
     void *imageComp = componentByTypeName(imageHostGo, "UnityEngine.UI.Image");
     if (!ptrLooksValid(imageComp)) {
         IPALog([NSString stringWithFormat:
-                  @"[SPRITE-SWAP %s] no Image component on go=%p", tag, imageHostGo]);
+                  @"[SPRITE-SWAP-%s] skipped: reason=noImageComponent go=%p", tag, imageHostGo]);
         return false;
     }
     if (!g_method_Image_set_sprite) {
@@ -384,18 +384,18 @@ bool swapImageSpriteOnGo(void *imageHostGo, void *newSprite, const char *tag) {
         g_method_Image_set_sprite =
             p_il2cpp_class_get_method_from_name(klass, "set_sprite", 1);
         IPALog([NSString stringWithFormat:
-                  @"[SPRITE-SWAP %s] cached Image.set_sprite method=%p (klass=%p)",
+                  @"[SPRITE-SWAP-%s] cached: method=Image.set_sprite ptr=%p klass=%p",
                   tag, g_method_Image_set_sprite, klass]);
     }
     if (!g_method_Image_set_sprite) return false;
     void *methodPtr = *(void **)g_method_Image_set_sprite;
     if (!methodPtr) {
         IPALog([NSString stringWithFormat:
-                  @"[SPRITE-SWAP %s] set_sprite methodPointer is NULL", tag]);
+                  @"[SPRITE-SWAP-%s] skipped: at=Image.set_sprite reason=methodPointerNull", tag]);
         return false;
     }
     IPALog([NSString stringWithFormat:
-              @"[SPRITE-SWAP %s] applying sprite=%p to imageComp=%p (was m_Sprite=%p)",
+              @"[SPRITE-SWAP-%s] applied: sprite=%p imageComp=%p prevSprite=%p",
               tag, newSprite, imageComp, readPtr(imageComp, 0xD8)]);
     ((Image_set_sprite_directABI_t)methodPtr)(imageComp, newSprite, g_method_Image_set_sprite);
     return true;
@@ -419,7 +419,7 @@ void reconSpriteName(void *cloneTf) {
     if (!ptrLooksValid(sprite)) return;
     NSString *name = objectName(sprite);
     IPALog([NSString stringWithFormat:
-              @"[SPRITE-NAME] clone Image.m_Sprite=%p name=\"%@\"",
+              @"[SPRITE-NAME] resolved: subject=cloneSprite ptr=%p name=\"%@\"",
               sprite, name ?: @"<null>"]);
 }
 

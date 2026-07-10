@@ -50,7 +50,7 @@ void KIOUEditorInstallAssistEnableHook(uintptr_t unityBase) {
         (void *)hook_RBS_getDepth, unityBase);
     KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_RBSUPPORT_GET_DEPTH, hook_RBS_getDepth);
     IPALog([NSString stringWithFormat:
-            @"[ASSIST-EN] installed: get_Enabled orig=%p get_Depth orig=%p (depth=%d)",
+            @"[ASSIST-EN] installed: getEnabledOrig=%p getDepthOrig=%p depth=%d",
             (void *)s_origRBS_getEnabled, (void *)s_origRBS_getDepth,
             (int)KIOUEditorAssistDepth()]);
 }

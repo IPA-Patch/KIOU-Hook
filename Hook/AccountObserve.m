@@ -137,12 +137,12 @@ static void *kfSwapRegisterDistinctId(void *userName, void *distinctId) {
         void *newStr = g_il2cpp_string_new(pending.UTF8String);
         if (newStr) {
             IPALog([NSString stringWithFormat:
-                      @"[ACCOUNT] RegisterUserArgs.Create distinctId → %@", pending]);
+                      @"[ACCOUNT] applied: at=RegisterUserArgs.Create field=distinctId value=%@", pending]);
             return newStr;
         }
     }
     IPALog([NSString stringWithFormat:
-              @"[ACCOUNT] RegisterUserArgs.Create userName=%@ distinctId=%@",
+              @"[ACCOUNT] fire: at=RegisterUserArgs.Create userName=%@ distinctId=%@",
               readIl2CppStr(userName) ?: @"(nil)",
               readIl2CppStr(distinctId) ?: @"(nil)"]);
     return distinctId;
@@ -164,12 +164,12 @@ static void *kfSwapLoginDeviceId(void *deviceId, void *distinctId) {
         void *newStr = g_il2cpp_string_new(pending.UTF8String);
         if (newStr) {
             IPALog([NSString stringWithFormat:
-                      @"[ACCOUNT] LoginArgs.Create deviceId → %@", pending]);
+                      @"[ACCOUNT] applied: at=LoginArgs.Create field=deviceId value=%@", pending]);
             return newStr;
         }
     }
     IPALog([NSString stringWithFormat:
-              @"[ACCOUNT] LoginArgs.Create deviceId=%@ distinctId=%@",
+              @"[ACCOUNT] fire: at=LoginArgs.Create deviceId=%@ distinctId=%@",
               readIl2CppStr(deviceId) ?: @"(nil)",
               readIl2CppStr(distinctId) ?: @"(nil)"]);
     return deviceId;
@@ -198,7 +198,7 @@ static void observeRunLoginSeqCompletion(void *self) {
         NSString *userName    = readIl2CppStr(readPtr(candidate, OFF_LOGIN_REPLY_USER_NAME));
         if (!userName && !deviceId) continue;
         IPALog([NSString stringWithFormat:
-                  @"[ACCOUNT] LoginReply @0x%lx userName=%@ deviceId=%@",
+                  @"[ACCOUNT] resolved: subject=loginReply offset=0x%lx userName=%@ deviceId=%@",
                   (unsigned long)offsets[i], userName ?: @"(nil)", deviceId ?: @"(nil)"]);
 
         NSString *userId = extractJWTSub(accessToken);
@@ -219,7 +219,7 @@ void KIOUHookRunLoginSeqMoveNext(void *self, void *mi) {
         @try { s_origRunLoginSeqMoveNext(self, mi); }
         @catch (NSException *e) {
             IPALog([NSString stringWithFormat:
-                      @"[ACCOUNT] RunLoginSeq.MoveNext orig threw: %@", e]);
+                      @"[ACCOUNT] exception: at=RunLoginSeq.MoveNext error=%@", e]);
             return;
         }
     }
@@ -243,7 +243,7 @@ static void observeGetSelfProfileCompletion(void *self) {
         if (userName.length == 0 && openUserId.length == 0) continue;
 
         IPALog([NSString stringWithFormat:
-                  @"[ACCOUNT] SelfProfile @0x%lx userName=%@ openUserId=%@",
+                  @"[ACCOUNT] resolved: subject=selfProfile offset=0x%lx userName=%@ openUserId=%@",
                   (unsigned long)off, userName ?: @"(nil)", openUserId ?: @"(nil)"]);
 
         NSMutableArray<NSDictionary *> *rankDicts = [NSMutableArray array];
@@ -280,7 +280,7 @@ void KIOUHookGetSelfProfileMoveNext(void *self, void *mi) {
         @try { s_origGetSelfProfileMoveNext(self, mi); }
         @catch (NSException *e) {
             IPALog([NSString stringWithFormat:
-                      @"[ACCOUNT] GetSelfProfile.MoveNext orig threw: %@", e]);
+                      @"[ACCOUNT] exception: at=GetSelfProfile.MoveNext error=%@", e]);
             return;
         }
     }
@@ -311,14 +311,14 @@ bool KIOUHookAccountExists(void *data, void *mi) {
     if (s_origAccountExists) {
         @try { origResult = s_origAccountExists(data, mi); }
         @catch (NSException *e) {
-            IPALog([NSString stringWithFormat:@"[ACCOUNT] AccountExists orig threw: %@", e]);
+            IPALog([NSString stringWithFormat:@"[ACCOUNT] exception: at=AccountExists error=%@", e]);
         }
     }
     observeAccountExistsData(data);
     bool forceRegister = KIOUForceRegisterOnNextLaunch();
     bool result = forceRegister ? false : origResult;
     if (forceRegister) {
-        IPALog(@"[ACCOUNT] AccountExists overridden false (force_register)");
+        IPALog(@"[ACCOUNT] applied: at=AccountExists override=false reason=forceRegister");
     }
     return result;
 }
@@ -331,13 +331,13 @@ KIOUUniTaskRet KIOUHookRunResetUserDataSeq(void *ct, void *mi) {
     KIOUSetPendingDistinctId(freshUuid);
     KIOUSetPendingDeviceId(freshUuid);
     IPALog([NSString stringWithFormat:
-              @"[ACCOUNT] RunResetUserDataSequenceAsync armed fresh_uuid=%@", freshUuid]);
+              @"[ACCOUNT] armed: at=RunResetUserDataSequenceAsync freshUuid=%@", freshUuid]);
     return s_origRunResetSeq ? s_origRunResetSeq(ct, mi) : (KIOUUniTaskRet){0, 0};
 }
 
 KIOUUniTaskRet KIOUHookRunDeleteAccountSeq(void *ct, void *mi) {
     IPALog([NSString stringWithFormat:
-              @"[ACCOUNT] RunDeleteAccountSequenceAsync (active=%@)",
+              @"[ACCOUNT] fire: at=RunDeleteAccountSequenceAsync active=%@",
               KIOUActiveAccountUserId() ?: @"(none)"]);
     return s_origRunDeleteAccountSeq ? s_origRunDeleteAccountSeq(ct, mi) : (KIOUUniTaskRet){0, 0};
 }
@@ -352,21 +352,21 @@ typedef KIOUUniTaskRet (*BackToTitleRunAsync_t)(void *ct, void *mi);
 
 void KIOUNavigateToTitleScene(void) {
     if (g_unityBase == 0) {
-        IPALog(@"[ACCOUNT] KIOUNavigateToTitleScene: unityBase not yet set");
+        IPALog(@"[ACCOUNT] skipped: at=KIOUNavigateToTitleScene reason=unityBaseUnset");
         return;
     }
     uintptr_t addr = KIOUHookSiteAddr(KIOU_HOOK_NAME_BACK_TO_TITLE_RUN_ASYNC, g_unityBase);
     if (addr == 0) {
-        IPALog(@"[ACCOUNT] KIOUNavigateToTitleScene: site address unknown");
+        IPALog(@"[ACCOUNT] skipped: at=KIOUNavigateToTitleScene reason=siteAddrUnknown");
         return;
     }
     BackToTitleRunAsync_t fn = (BackToTitleRunAsync_t)addr;
     @try {
         (void)fn(NULL, NULL);
-        IPALog(@"[ACCOUNT] BackToTitleSequence.RunAsync invoked");
+        IPALog(@"[ACCOUNT] fire: at=BackToTitleSequence.RunAsync");
     } @catch (NSException *e) {
         IPALog([NSString stringWithFormat:
-                  @"[ACCOUNT] BackToTitleSequence.RunAsync threw: %@", e]);
+                  @"[ACCOUNT] exception: at=BackToTitleSequence.RunAsync error=%@", e]);
     }
 }
 
@@ -396,7 +396,7 @@ void KIOUInstallAccountObserveHook(uintptr_t unityBase) {
 #if IPA_CHINLAN
     (void)KF_RVA_RUN_RESET_USER_DATA_SEQ;
     (void)KF_RVA_RUN_DELETE_ACCOUNT_SEQ;
-    IPALog(@"[ACCOUNT] chinlan: catalog hooks resolved; raw-RVA hooks (Reset/Delete) skipped");
+    IPALog(@"[ACCOUNT] resolved: variant=chinlan catalogHooks=yes rawRvaHooks=skipped");
 #else
     // RunReset / RunDelete are JB-only sites (no chinlan cave for them).
     {
@@ -405,7 +405,7 @@ void KIOUInstallAccountObserveHook(uintptr_t unityBase) {
         MSHookFunction((void *)addr, (void *)KIOUHookRunResetUserDataSeq, &orig);
         s_origRunResetSeq = (RunResetSeq_t)orig;
         IPALog([NSString stringWithFormat:
-                  @"[ACCOUNT] hooked RunResetUserDataSeq @0x%lx", (unsigned long)addr]);
+                  @"[ACCOUNT] hooked: target=RunResetUserDataSeq addr=0x%lx", (unsigned long)addr]);
     }
     {
         uintptr_t addr = unityBase + KF_RVA_RUN_DELETE_ACCOUNT_SEQ;
@@ -413,8 +413,8 @@ void KIOUInstallAccountObserveHook(uintptr_t unityBase) {
         MSHookFunction((void *)addr, (void *)KIOUHookRunDeleteAccountSeq, &orig);
         s_origRunDeleteAccountSeq = (RunResetSeq_t)orig;
         IPALog([NSString stringWithFormat:
-                  @"[ACCOUNT] hooked RunDeleteAccountSeq @0x%lx", (unsigned long)addr]);
+                  @"[ACCOUNT] hooked: target=RunDeleteAccountSeq addr=0x%lx", (unsigned long)addr]);
     }
-    IPALog(@"[ACCOUNT] hooks installed");
+    IPALog(@"[ACCOUNT] installed:");
 #endif
 }

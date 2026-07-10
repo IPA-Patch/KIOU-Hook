@@ -63,7 +63,7 @@ static bool readCloneScreenRect(void *cloneTf,
                 p_il2cpp_class_get_method_from_name(klass, "get_sizeDelta", 0);
         }
         IPALog([NSString stringWithFormat:
-                  @"[CLONE-RECT] cached get_position=%p get_sizeDelta=%p (klass=%p)",
+                  @"[CLONE-RECT] cached: getPosition=%p getSizeDelta=%p klass=%p",
                   g_method_Tf_get_position, g_method_Rt_get_sizeDelta, klass]);
     }
     if (!g_method_Tf_get_position || !g_method_Rt_get_sizeDelta) return false;
@@ -75,7 +75,7 @@ static bool readCloneScreenRect(void *cloneTf,
     *outPos = ((Tf_get_position_HFA_t)posPtr)(cloneTf, g_method_Tf_get_position);
     *outSize = ((Rt_get_sizeDelta_HFA_t)sizePtr)(cloneTf, g_method_Rt_get_sizeDelta);
     IPALog([NSString stringWithFormat:
-              @"[CLONE-RECT] pos=(%g,%g,%g) sizeDelta=(%g,%g)",
+              @"[CLONE-RECT] resolved: pos=\"(%g,%g,%g)\" sizeDelta=\"(%g,%g)\"",
               outPos->x, outPos->y, outPos->z, outSize->x, outSize->y]);
     return true;
 }
@@ -106,7 +106,7 @@ void hideCloneImage(void *cloneTf) {
     color[2] = 1.0f;
     color[3] = 0.0f;
     IPALog([NSString stringWithFormat:
-              @"[CLONE-HIDE] imageComp=%p m_Color set to (1,1,1,0)", imageComp]);
+              @"[CLONE-HIDE] applied: imageComp=%p field=mColor value=\"(1,1,1,0)\"", imageComp]);
 
     if (!g_method_Graphic_SetAllDirty) {
         if (!p_il2cpp_object_get_class || !p_il2cpp_class_get_method_from_name) return;
@@ -114,14 +114,14 @@ void hideCloneImage(void *cloneTf) {
         if (!klass) return;
         g_method_Graphic_SetAllDirty = p_il2cpp_class_get_method_from_name(klass, "SetAllDirty", 0);
         IPALog([NSString stringWithFormat:
-                  @"[CLONE-HIDE] cached Graphic.SetAllDirty method=%p (klass=%p)",
+                  @"[CLONE-HIDE] cached: method=Graphic.SetAllDirty ptr=%p klass=%p",
                   g_method_Graphic_SetAllDirty, klass]);
     }
     if (!g_method_Graphic_SetAllDirty) return;
     void *methodPtr = *(void **)g_method_Graphic_SetAllDirty;
     if (!methodPtr) return;
     ((Graphic_SetAllDirty_t)methodPtr)(imageComp, g_method_Graphic_SetAllDirty);
-    IPALog(@"[CLONE-HIDE] SetAllDirty invoked");
+    IPALog(@"[CLONE-HIDE] fire: at=SetAllDirty");
 }
 
 // Probe each GameObject in the clone tree for a text component and log
@@ -157,7 +157,7 @@ void reconTextComponents(void *cloneTf) {
         for (int n = 0; n < 3; n++) {
             void *c = componentByTypeName(pts[p].go, names[n]);
             IPALog([NSString stringWithFormat:
-                      @"[TEXT-RECON] %s GetComponent(\"%s\")=%p",
+                      @"[TEXT-RECON] resolved: target=%s component=\"%s\" ptr=%p",
                       pts[p].tag, names[n], c]);
         }
     }
@@ -189,7 +189,7 @@ static bool applySiblingSpriteToClone(void *cloneGo, void *sourceBtn, const char
     void *sprite = spriteOfButton(sourceBtn);
     if (!ptrLooksValid(sprite)) {
         IPALog([NSString stringWithFormat:
-                  @"[SPRITE-SWAP clone] no sprite on %s source", sourceTag]);
+                  @"[SPRITE-SWAP-CLONE] skipped: reason=noSprite source=%s", sourceTag]);
         return false;
     }
     void *cloneTf = goTransformOf(cloneGo);
@@ -197,7 +197,7 @@ static bool applySiblingSpriteToClone(void *cloneGo, void *sourceBtn, const char
     if (!ptrLooksValid(imageTf)) return false;
     void *imageGo = gameObjectOf(imageTf);
     IPALog([NSString stringWithFormat:
-              @"[SPRITE-SWAP clone] source=%s sprite=%p", sourceTag, sprite]);
+              @"[SPRITE-SWAP-CLONE] fire: source=%s sprite=%p", sourceTag, sprite]);
     return swapImageSpriteOnGo(imageGo, sprite, "clone");
 }
 
@@ -222,45 +222,45 @@ void KIOUEditorApplyTitleSpriteToClone(void *cloneGo) {
 void KIOUEditorReconButtonImage(void *uiButton, const char *tag) {
     if (!ptrLooksValid(uiButton)) {
         IPALog([NSString stringWithFormat:
-                  @"[SPRITE-RECON %s] button ptr invalid (%p)", tag, uiButton]);
+                  @"[SPRITE-RECON-%s] skipped: reason=buttonPtrInvalid ptr=%p", tag, uiButton]);
         return;
     }
     void *btnGo = gameObjectOf(uiButton);
     void *btnTf = goTransformOf(btnGo);
     IPALog([NSString stringWithFormat:
-              @"[SPRITE-RECON %s] btn=%p go=%p tf=%p",
+              @"[SPRITE-RECON-%s] resolved: btn=%p go=%p tf=%p",
               tag, uiButton, btnGo, btnTf]);
     if (!ptrLooksValid(btnTf)) return;
 
     void *imageTf = findIconImageTransform(btnTf);
     if (!ptrLooksValid(imageTf)) {
         IPALog([NSString stringWithFormat:
-                  @"[SPRITE-RECON %s] no Image/IconImage leaf - dumping btnTf:",
+                  @"[SPRITE-RECON-%s] dumped: subject=btnTf reason=noImageLeaf",
                   tag]);
         dumpHierarchy(btnTf, 0, 3);
         return;
     }
     void *imageGo = gameObjectOf(imageTf);
     IPALog([NSString stringWithFormat:
-              @"[SPRITE-RECON %s] imageTf=%p imageGo=%p",
+              @"[SPRITE-RECON-%s] resolved: imageTf=%p imageGo=%p",
               tag, imageTf, imageGo]);
     if (!ptrLooksValid(imageGo)) return;
 
     void *imageComp = componentByTypeName(imageGo, "UnityEngine.UI.Image");
     IPALog([NSString stringWithFormat:
-              @"[SPRITE-RECON %s] GetComponent(\"UnityEngine.UI.Image\")=%p",
+              @"[SPRITE-RECON-%s] resolved: component=\"UnityEngine.UI.Image\" ptr=%p",
               tag, imageComp]);
     if (!ptrLooksValid(imageComp)) return;
 
     void *sprite = readPtr(imageComp, 0xD8);
     IPALog([NSString stringWithFormat:
-              @"[SPRITE-RECON %s] m_Sprite=%p", tag, sprite]);
+              @"[SPRITE-RECON-%s] resolved: sprite=%p", tag, sprite]);
 
     // Title side: cache the sprite so the home clone hook can swap it in.
     if (tag && strcmp(tag, "title-menu") == 0 && ptrLooksValid(sprite)) {
         g_titleMenuSprite = sprite;
         IPALog([NSString stringWithFormat:
-                  @"[SPRITE-RECON %s] cached title menu sprite for clone swap",
+                  @"[SPRITE-RECON-%s] cached: subject=titleMenuSprite",
                   tag]);
     }
 }
@@ -275,13 +275,13 @@ void transformSetSiblingIndex(void *transformObj, int32_t idx) {
         if (!klass) return;
         g_method_Tf_SetSiblingIndex = p_il2cpp_class_get_method_from_name(klass, "SetSiblingIndex", 1);
         IPALog([NSString stringWithFormat:
-                  @"[HOME] cached Transform.SetSiblingIndex method=%p (klass=%p)",
+                  @"[HOME] cached: method=Transform.SetSiblingIndex ptr=%p klass=%p",
                   g_method_Tf_SetSiblingIndex, klass]);
     }
     if (!g_method_Tf_SetSiblingIndex) return;
     void *methodPtr = *(void **)g_method_Tf_SetSiblingIndex;
     if (!methodPtr) {
-        IPALog(@"[HOME] Tf.SetSiblingIndex direct: methodPointer NULL");
+        IPALog(@"[HOME] skipped: at=Tf.SetSiblingIndex reason=methodPointerNull");
         return;
     }
     ((Tf_SetSiblingIndex_directABI_t)methodPtr)(transformObj, idx, g_method_Tf_SetSiblingIndex);
@@ -296,7 +296,7 @@ void *transformOf(void *componentObj) {
         if (!klass) return NULL;
         g_method_get_transform = p_il2cpp_class_get_method_from_name(klass, "get_transform", 0);
         IPALog([NSString stringWithFormat:
-                  @"[HOME] cached get_transform method=%p (klass=%p)",
+                  @"[HOME] cached: method=Component.get_transform ptr=%p klass=%p",
                   g_method_get_transform, klass]);
     }
     return invoke0(g_method_get_transform, componentObj);
@@ -313,7 +313,7 @@ static void logInstantiateMethods(void *anyGo) {
         || !p_il2cpp_class_get_methods
         || !p_il2cpp_method_get_name
         || !p_il2cpp_method_get_param_count) {
-        IPALog(@"[HOME] enum recon: bridge incomplete, skipping");
+        IPALog(@"[HOME] skipped: phase=enumRecon reason=bridgeIncomplete");
         return;
     }
     void *goKlass = p_il2cpp_object_get_class(anyGo);
@@ -321,7 +321,7 @@ static void logInstantiateMethods(void *anyGo) {
     void *objKlass = p_il2cpp_class_get_parent(goKlass);
     if (!objKlass) return;
     IPALog([NSString stringWithFormat:
-              @"[HOME] enum: walking Object klass=%p", objKlass]);
+              @"[HOME] fire: phase=enum subject=objectKlass klass=%p", objKlass]);
     void *iter = NULL;
     void *method = NULL;
     int hits = 0;
@@ -335,12 +335,12 @@ static void logInstantiateMethods(void *anyGo) {
             isGeneric = (int)p_il2cpp_method_is_generic(method);
         }
         IPALog([NSString stringWithFormat:
-                  @"[HOME] enum:   %s argc=%u generic=%d method=%p",
+                  @"[HOME] resolved: phase=enum name=%s argc=%u generic=%d method=%p",
                   name, argc, isGeneric, method]);
         hits++;
     }
     IPALog([NSString stringWithFormat:
-              @"[HOME] enum: %d Instantiate variants found", hits]);
+              @"[HOME] resolved: phase=enum instantiateVariants=%d", hits]);
 }
 
 // Walk a klass's methods and return the first one matching name + argc that
@@ -380,7 +380,7 @@ static void *instantiateCloneNonGeneric(void *originalGo) {
         if (!objKlass) return NULL;
         g_method_Instantiate1NonGen = findNonGenericMethod(objKlass, "Instantiate", 1);
         IPALog([NSString stringWithFormat:
-                  @"[HOME] cached non-generic Instantiate(Object) method=%p (objKlass=%p)",
+                  @"[HOME] cached: method=\"Instantiate(Object)\" generic=false ptr=%p objKlass=%p",
                   g_method_Instantiate1NonGen, objKlass]);
     }
     if (!g_method_Instantiate1NonGen) return NULL;
@@ -410,17 +410,17 @@ void *instantiateCloneDirect(void *originalGo) {
         if (!objKlass) return NULL;
         g_method_Instantiate1NonGen = findNonGenericMethod(objKlass, "Instantiate", 1);
         IPALog([NSString stringWithFormat:
-                  @"[HOME] cached non-generic Instantiate(Object) method=%p (objKlass=%p)",
+                  @"[HOME] cached: method=\"Instantiate(Object)\" generic=false ptr=%p objKlass=%p",
                   g_method_Instantiate1NonGen, objKlass]);
     }
     if (!g_method_Instantiate1NonGen) return NULL;
     void *methodPtr = *(void **)g_method_Instantiate1NonGen;
     if (!methodPtr) {
-        IPALog(@"[HOME] direct: methodPointer at offset 0 is NULL");
+        IPALog(@"[HOME] skipped: at=instantiateDirect reason=methodPointerNull");
         return NULL;
     }
     IPALog([NSString stringWithFormat:
-              @"[HOME] direct call: methodPtr=%p methodInfo=%p original=%p",
+              @"[HOME] fire: at=instantiateDirect methodPtr=%p methodInfo=%p original=%p",
               methodPtr, g_method_Instantiate1NonGen, originalGo]);
     return ((Instantiate1_directABI_t)methodPtr)(originalGo, g_method_Instantiate1NonGen);
 }
@@ -443,12 +443,12 @@ static void *instantiateCloneWithParent(void *originalGo, void *parentTransform)
         if (!goKlass) return NULL;
         void *objKlass = p_il2cpp_class_get_parent(goKlass);
         if (!objKlass) {
-            IPALog(@"[HOME] Instantiate lookup: parent klass NULL");
+            IPALog(@"[HOME] skipped: at=instantiateLookup reason=parentKlassNull");
             return NULL;
         }
         g_method_Instantiate2 = p_il2cpp_class_get_method_from_name(objKlass, "Instantiate", 2);
         IPALog([NSString stringWithFormat:
-                  @"[HOME] cached Instantiate(Obj,Tf) method=%p (goKlass=%p objKlass=%p)",
+                  @"[HOME] cached: method=\"Instantiate(Object,Transform)\" ptr=%p goKlass=%p objKlass=%p",
                   g_method_Instantiate2, goKlass, objKlass]);
     }
     if (!g_method_Instantiate2) return NULL;

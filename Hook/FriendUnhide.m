@@ -48,7 +48,7 @@ static void hook_UIBtn_OnPointerClick(void *self, void *eventData, void *methodI
             void *thisGo = gameObjectOf(self);
             if (g_friendGo && thisGo == g_friendGo) {
                 IPALog([NSString stringWithFormat:
-                          @"[HOME] friend tap -> settings (self=%p go=%p)",
+                          @"[HOME] fire: event=friendTap action=presentSettings self=%p go=%p",
                           self, thisGo]);
                 KIOUEditorPresentSettings();
                 return;
@@ -58,7 +58,7 @@ static void hook_UIBtn_OnPointerClick(void *self, void *eventData, void *methodI
             // re-enables the branch for testing.
             if (g_cloneGo && thisGo == g_cloneGo) {
                 IPALog([NSString stringWithFormat:
-                          @"[HOME] clone tap -> settings (self=%p go=%p)",
+                          @"[HOME] fire: event=cloneTap action=presentSettings self=%p go=%p",
                           self, thisGo]);
                 KIOUEditorPresentSettings();
                 return;
@@ -66,7 +66,7 @@ static void hook_UIBtn_OnPointerClick(void *self, void *eventData, void *methodI
         }
     } @catch (NSException *e) {
         IPALog([NSString stringWithFormat:
-                  @"[HOME] OnPointerClick exc: %@", e]);
+                  @"[HOME] exception: at=OnPointerClick error=%@", e]);
     }
     if (orig_UIBtn_OnPointerClick) {
         orig_UIBtn_OnPointerClick(self, eventData, methodInfo);
@@ -79,7 +79,7 @@ static void hook_HUP_ctor(void *self, void *view) {
     }
     @try {
         if (!ptrLooksValid(view)) {
-            IPALog(@"[HOME] presenter.ctor: view ptr invalid");
+            IPALog(@"[HOME] skipped: at=presenterCtor reason=viewPtrInvalid");
             return;
         }
         void *menuBtn   = readPtr(view, OFF_HUV_MENU_BUTTON);
@@ -87,7 +87,7 @@ static void hook_HUP_ctor(void *self, void *view) {
         void *friendBtn = readPtr(view, OFF_HUV_FRIEND_BUTTON);
         (void)menuBtn; (void)giftBtn;
         IPALog([NSString stringWithFormat:
-                  @"[HOME] HomeUtilityView@%p buttons: menu=%p gift=%p friend=%p",
+                  @"[HOME] resolved: subject=homeUtilityView view=%p menu=%p gift=%p friend=%p",
                   view, menuBtn, giftBtn, friendBtn]);
 
         // Friend button is always SetActive(true) because it doubles as
@@ -97,14 +97,14 @@ static void hook_HUP_ctor(void *self, void *view) {
             void *friendGo = gameObjectOf(friendBtn);
             if (ptrLooksValid(friendGo)) {
                 IPALog([NSString stringWithFormat:
-                          @"[HOME] friend gameObject=%p -> SetActive(true)", friendGo]);
+                          @"[HOME] applied: field=friendGameObject.active value=true go=%p", friendGo]);
                 setActive(friendGo, true);
                 // Snapshot the friend GO so the OnPointerClick hook above
                 // can recognise the tap and route to settings instead of
                 // the "Coming soon" popup the orig handler shows.
                 g_friendGo = friendGo;
             } else {
-                IPALog(@"[HOME] friend gameObject lookup failed");
+                IPALog(@"[HOME] skipped: reason=friendGameObjectMissing");
             }
         }
 
@@ -117,7 +117,7 @@ static void hook_HUP_ctor(void *self, void *view) {
             && view != g_lastClonedView
             && ptrLooksValid(menuBtn) && ptrLooksValid(friendBtn)) {
             IPALog([NSString stringWithFormat:
-                      @"[HOME] presenter.ctor on main thread=%d (view %p -> %p)",
+                      @"[HOME] fire: at=presenterCtor mainThread=%d prevView=%p view=%p",
                       (int)[NSThread isMainThread],
                       g_lastClonedView, view]);
             static bool s_homeMenuReconDone = false;
@@ -132,7 +132,7 @@ static void hook_HUP_ctor(void *self, void *view) {
                     g_lastClonedView = view;
                     g_cloneGo = cloneGo;
                     IPALog([NSString stringWithFormat:
-                              @"[HOME] direct: clone gameObject=%p", cloneGo]);
+                              @"[HOME] resolved: cloneGameObject=%p", cloneGo]);
                     static bool s_textReconDone = false;
                     if (!s_textReconDone) {
                         void *cloneTfRecon = goTransformOf(cloneGo);
@@ -146,40 +146,40 @@ static void hook_HUP_ctor(void *self, void *view) {
                     void *friendTf = transformOf(friendBtn);
                     void *cloneTf  = goTransformOf(cloneGo);
                     IPALog([NSString stringWithFormat:
-                              @"[HOME] phase2b: friendTf=%p cloneTf=%p",
+                              @"[HOME] resolved: phase=phase2b friendTf=%p cloneTf=%p",
                               friendTf, cloneTf]);
                     if (ptrLooksValid(friendTf) && ptrLooksValid(cloneTf)) {
                         void *parentTf = transformParentOf(friendTf);
                         IPALog([NSString stringWithFormat:
-                                  @"[HOME] phase2b: parentTf=%p", parentTf]);
+                                  @"[HOME] resolved: phase=phase2b parentTf=%p", parentTf]);
                         if (ptrLooksValid(parentTf)) {
                             transformSetParent(cloneTf, parentTf, false);
                             int32_t friendIdx = transformGetSiblingIndex(friendTf);
                             IPALog([NSString stringWithFormat:
-                                      @"[HOME] phase2b: friend siblingIndex=%d", friendIdx]);
+                                      @"[HOME] resolved: phase=phase2b friendSiblingIndex=%d", friendIdx]);
                             if (friendIdx >= 0) {
                                 transformSetSiblingIndex(cloneTf, friendIdx + 1);
                                 IPALog([NSString stringWithFormat:
-                                          @"[HOME] phase2b: clone -> siblingIndex=%d",
+                                          @"[HOME] applied: phase=phase2b field=cloneSiblingIndex value=%d",
                                           friendIdx + 1]);
                             }
                         }
                     }
 
-                    IPALog(@"[HOME] phase2c recon: dump clone hierarchy");
+                    IPALog(@"[HOME] dumped: subject=cloneHierarchy phase=phase2c");
                     dumpHierarchy(cloneTf, 0, 6);
-                    IPALog(@"[HOME] phase2c recon: dump menu (original) hierarchy");
+                    IPALog(@"[HOME] dumped: subject=menuHierarchy phase=phase2c");
                     void *menuTf = transformOf(menuBtn);
                     dumpHierarchy(menuTf, 0, 6);
-                    IPALog(@"[HOME] phase2c recon: dump friend (live) hierarchy");
+                    IPALog(@"[HOME] dumped: subject=friendHierarchy phase=phase2c");
                     dumpHierarchy(friendTf, 0, 6);
                 } else {
-                    IPALog(@"[HOME] direct: Instantiate returned NULL/invalid");
+                    IPALog(@"[HOME] skipped: reason=instantiateFailed");
                 }
             }
         }
     } @catch (NSException *e) {
-        IPALog([NSString stringWithFormat:@"[HOME] hook exception: %@", e]);
+        IPALog([NSString stringWithFormat:@"[HOME] exception: error=%@", e]);
     }
 }
 
@@ -201,6 +201,6 @@ void KIOUEditorInstallFriendUnhideHook(uintptr_t unityBase) {
     KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_UIBUTTONBASE_ONPOINTERCLICK, hook_UIBtn_OnPointerClick);
 
     IPALog([NSString stringWithFormat:
-            @"[FRIEND] installed: HUP.ctor orig=%p UIBtn.OnPointerClick orig=%p",
+            @"[FRIEND] installed: hupCtor=%p uiBtnOnPointerClick=%p",
             (void *)orig_HUP_ctor, (void *)orig_UIBtn_OnPointerClick]);
 }

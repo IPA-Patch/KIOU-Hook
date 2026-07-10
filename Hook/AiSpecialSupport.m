@@ -118,8 +118,8 @@ void KIOUEditorInstallAiSpecialSupportHook(uintptr_t unityBase) {
         hook_MP_PaidAvailable);
 
     IPALog([NSString stringWithFormat:
-            @"[AI-SPECIAL] installed: CanUse orig=%p FreeRem=%p TicketRem=%p "
-            @"MP.Free=%p MP.Paid=%p (feature gate=%d)",
+            @"[AI-SUPPORT] installed: canUse=%p freeRem=%p ticketRem=%p "
+            @"mpFree=%p mpPaid=%p featureGate=%d",
             (void *)s_origMoveResult_CanUse,
             (void *)s_origMoveResult_FreeRemaining,
             (void *)s_origMoveResult_TicketRemaining,

@@ -32,7 +32,7 @@ static void hook_CollectionPresetReply_merge(void *self, void *parseContext) {
             int32_t collCount = 0;
             if (readRepeatedField(self, 0x18, &collArr, &collCount)) {
                 IPALog([NSString stringWithFormat:
-                        @"[UpdateCollectionPresetReply] updatedUserCollectionList count=%d",
+                        @"[UPDATE-COLLECTION-PRESET-REPLY] refresh: list=updatedUserCollectionList count=%d",
                         collCount]);
                 for (int32_t i = 0; i < collCount; i++) {
                     void *coll = readArrayElem(collArr, i);
@@ -41,12 +41,12 @@ static void hook_CollectionPresetReply_merge(void *self, void *parseContext) {
                     int32_t presetCount = 0;
                     if (!readRepeatedField(coll, 0x20, &presetArr, &presetCount)) {
                         IPALog([NSString stringWithFormat:
-                                @"[UpdateCollectionPresetReply]   [%d] presetList unreadable/empty",
+                                @"[UPDATE-COLLECTION-PRESET-REPLY] skipped: reason=unreadable list=presetList index=%d",
                                 i]);
                         continue;
                     }
                     IPALog([NSString stringWithFormat:
-                            @"[UpdateCollectionPresetReply]   [%d] presetList count=%d",
+                            @"[UPDATE-COLLECTION-PRESET-REPLY] refresh: list=presetList index=%d count=%d",
                             i, presetCount]);
                     for (int32_t j = 0; j < presetCount; j++) {
                         void *preset = readArrayElem(presetArr, j);
@@ -59,20 +59,21 @@ static void hook_CollectionPresetReply_merge(void *self, void *parseContext) {
                         int32_t mstShogiBoardId     = readI32(preset, 0x2C);
                         int32_t mstShogiIngameBgmId = readI32(preset, 0x30);
                         IPALog([NSString stringWithFormat:
-                                @"[UpdateCollectionPresetReply]     preset[%d] num=%d icon=%d "
-                                @"frame=%d achievement=%d piece=%d board=%d bgm=%d",
+                                @"[UPDATE-COLLECTION-PRESET-REPLY] refresh: presetIndex=%d presetNumber=%d "
+                                @"mstIconId=%d mstIconFrameId=%d mstAchievementId=%d mstShogiPieceId=%d "
+                                @"mstShogiBoardId=%d mstShogiIngameBgmId=%d",
                                 j, presetNumber, mstIconId, mstIconFrameId,
                                 mstAchievementId, mstShogiPieceId, mstShogiBoardId,
                                 mstShogiIngameBgmId]);
                     }
                 }
             } else {
-                IPALog(@"[UpdateCollectionPresetReply] updatedUserCollectionList unreadable/empty");
+                IPALog(@"[UPDATE-COLLECTION-PRESET-REPLY] skipped: reason=unreadable list=updatedUserCollectionList");
             }
         }
     } @catch (NSException *e) {
         IPALog([NSString stringWithFormat:
-                @"[UpdateCollectionPresetReply] exception: %@", e]);
+                @"[UPDATE-COLLECTION-PRESET-REPLY] exception: error=%@", e]);
     }
     g_inHook = 0;
 }
@@ -83,6 +84,6 @@ void KIOUEditorInstallCollectionHook(uintptr_t unityBase) {
         (void *)hook_CollectionPresetReply_merge, unityBase);
     KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_COLLECTION_PRESET_MERGE, hook_CollectionPresetReply_merge);
     IPALog([NSString stringWithFormat:
-            @"[COLLECTION] installed: orig=%p (observation only)",
+            @"[COLLECTION] installed: orig=%p mode=observationOnly",
             (void *)s_origCollectionPresetReply_merge]);
 }

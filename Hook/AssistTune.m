@@ -60,11 +60,11 @@ static void hook_BSE_ctor(void *self, void *evalPath, void *settings) {
             writeI32(self, OFF_BSE_ENGINE_SKILL_LEVEL, targetSkill);
         }
         IPALog([NSString stringWithFormat:
-                @"[ASSIST-TUNE] BSE tuned: depth %d -> %d, skillLevel %d -> %d",
+                @"[ASSIST-TUNE] applied: scope=bseCtor depth=%d->%d skillLevel=%d->%d",
                 origDepth, targetDepth, origSkill, targetSkill]);
     } @catch (NSException *e) {
         IPALog([NSString stringWithFormat:
-                @"[ASSIST-TUNE] BSE ctor override exception: %@", e]);
+                @"[ASSIST-TUNE] exception: scope=bseCtor error=%@", e]);
     }
 }
 
@@ -83,7 +83,7 @@ static void hook_BSE_ensureInit(void *self) {
         uintptr_t setHashAddr = KIOUHookSiteAddr(
             KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT, g_unityBaseForAssist);
         if (setHashAddr == 0) {
-            IPALog(@"[ASSIST-TUNE] SetHashSize site unresolved — skipping");
+            IPALog(@"[ASSIST-TUNE] skipped: reason=setHashSizeSiteUnresolved");
             return;
         }
         int32_t mb = KIOUEditorAssistHashMB();
@@ -91,11 +91,11 @@ static void hook_BSE_ensureInit(void *self) {
             (NSS_SetHashSize_directABI_t)setHashAddr;
         setHash(session, mb, NULL);
         IPALog([NSString stringWithFormat:
-                @"[ASSIST-TUNE] EnsureInitializedLocked: SetHashSize(%d) ok session=%p",
+                @"[ASSIST-TUNE] applied: scope=ensureInitializedLocked hashSizeMB=%d session=%p",
                 mb, session]);
     } @catch (NSException *e) {
         IPALog([NSString stringWithFormat:
-                @"[ASSIST-TUNE] EnsureInitializedLocked SetHashSize exception: %@", e]);
+                @"[ASSIST-TUNE] exception: scope=ensureInitializedLocked error=%@", e]);
     }
 }
 
@@ -127,9 +127,9 @@ void KIOUEditorInstallAssistTuneHook(uintptr_t unityBase) {
         (void *)hook_BSE_evaluate_async, unityBase);
     KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_BSE_EVALUATE_ASYNC, hook_BSE_evaluate_async);
     IPALog([NSString stringWithFormat:
-            @"[ASSIST-TUNE] installed: BSE.ctor orig=%p EnsureInit orig=%p "
-            @"EvaluateAsync orig=%p (depth=%d skill=%d hash=%d MB, "
-            @"INGAME_ANALYSIS gate=%d)",
+            @"[ASSIST-TUNE] installed: bseCtorOrig=%p ensureInitOrig=%p "
+            @"evaluateAsyncOrig=%p depth=%d skill=%d hashMB=%d "
+            @"ingameAnalysisGate=%d",
             (void *)s_origBSE_ctor, (void *)s_origBSE_ensureInit,
             (void *)s_origBSE_evaluateAsync,
             (int)KIOUEditorAssistDepth(), (int)KIOUEditorAssistSkillLevel(),

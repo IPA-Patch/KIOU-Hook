@@ -54,7 +54,7 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
         s_origMatchingPlayer_merge(self, parseContext);
     }
     if (!ptrLooksValid(self)) {
-        IPALog(@"[MATCH] fire: self ptr invalid");
+        IPALog(@"[MATCH] skipped: reason=selfPtrInvalid");
         return;
     }
 
@@ -85,13 +85,13 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
             configuredSelf.length > 0 &&
             ![activeUserId isEqualToString:configuredSelf]) {
             IPALog([NSString stringWithFormat:
-                    @"[MATCH] self_user_id stale (%@) -> refresh to active (%@)",
+                    @"[MATCH] refresh: field=selfUserId reason=stale from=%@ to=%@",
                     configuredSelf, activeUserId]);
             KIOUSetSelfUserId(activeUserId);
             configuredSelf = activeUserId;
         } else if (!configuredSelf && activeUserId.length > 0) {
             IPALog([NSString stringWithFormat:
-                    @"[MATCH] self_user_id adopted from active: %@",
+                    @"[MATCH] applied: field=selfUserId source=active value=%@",
                     activeUserId]);
             KIOUSetSelfUserId(activeUserId);
             configuredSelf = activeUserId;
@@ -108,7 +108,7 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
 
         if (!isSelf) {
             IPALog([NSString stringWithFormat:
-                    @"[MATCH] skip non-self userId=%@ skin=%d char=%d",
+                    @"[MATCH] skipped: reason=nonSelf userId=%@ skin=%d char=%d",
                     userId, curSkinId, curCharId]);
             return;
         }
@@ -119,7 +119,7 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
         if (!configuredSelf) {
             KIOUSetSelfUserId(userId);
             IPALog([NSString stringWithFormat:
-                    @"[MATCH] self_user_id captured: %@ (heuristic -> strict)",
+                    @"[MATCH] applied: field=selfUserId source=heuristic userId=%@ next=strict",
                     userId]);
         }
 
@@ -130,7 +130,7 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
             if (curBSE != 1) {
                 writeU8(self, OFF_MP_ENABLE_BEGINNER_SUPPORT, 1);
                 IPALog([NSString stringWithFormat:
-                        @"[MATCH] enableBeginnerSupport %d -> 1 (self)",
+                        @"[MATCH] applied: field=enableBeginnerSupport value=%d->1 scope=self",
                         (int)curBSE]);
             }
         }
@@ -145,12 +145,12 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
         writeI32(self, OFF_MP_MST_CHAR_ID, target);  // 1:1 mapping skin <-> char
 
         IPALog([NSString stringWithFormat:
-                @"[MATCH] self=%@ skin %d->%d char %d->%d (self_locked=%@)",
+                @"[MATCH] applied: userId=%@ skin=%d->%d char=%d->%d selfLocked=%@",
                 userId, curSkinId, target, curCharId, target,
                 configuredSelf ? @"YES" : @"NO->YES"]);
     } @catch (NSException *e) {
         IPALog([NSString stringWithFormat:
-                @"[MATCH] exception: %@", e]);
+                @"[MATCH] exception: error=%@", e]);
     }
 }
 
@@ -161,7 +161,7 @@ void KIOUEditorInstallMatchingPlayerHook(uintptr_t unityBase) {
     KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_MATCHING_PLAYER_MERGE, hook_MatchingPlayer_merge);
     NSString *configured = KIOUSelfUserId();
     IPALog([NSString stringWithFormat:
-            @"[MATCH] installed: orig=%p self_user_id=%@",
+            @"[MATCH] installed: orig=%p selfUserId=%@",
             (void *)s_origMatchingPlayer_merge,
             configured ?: @"(unset, using heuristic)"]);
 }
