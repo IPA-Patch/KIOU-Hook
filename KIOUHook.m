@@ -61,6 +61,8 @@ const char KIOU_HOOK_NAME_MP_PAID_AVAILABLE[]            = "mp_paid_available";
 const char KIOU_HOOK_NAME_MATCH_GET_VALID_FOUND[]           = "match_get_valid_found";
 const char KIOU_HOOK_NAME_MATCH_RECEIVE_TIMEOUT_MOVENEXT[]  = "match_receive_timeout_movenext";
 const char KIOU_HOOK_NAME_MATCH_STREAM_ARGS_CREATE[]        = "match_stream_args_create";
+const char KIOU_HOOK_NAME_MATCH_START_D3_MOVENEXT[]         = "match_start_d3_movenext";
+const char KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_SEND_ASYNC[] = "match_stream_handler_send_async";
 // Direct-ABI helpers (KiouEditor, 1.0.1). hook_id = -1 in the catalog.
 const char KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT[]       = "nss_set_hash_size_direct";
 const char KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT[]      = "game_object_get_component";
@@ -122,6 +124,8 @@ static const KIOUHookEntry kCatalog[] = {
     { KIOU_HOOK_NAME_MATCH_GET_VALID_FOUND,          KIOU_HOOK_ID_MATCH_GET_VALID_FOUND,          KIOU_HOOK_RVA_MATCH_GET_VALID_FOUND          },
     { KIOU_HOOK_NAME_MATCH_RECEIVE_TIMEOUT_MOVENEXT, KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT, KIOU_HOOK_RVA_MATCH_RECEIVE_TIMEOUT_MOVENEXT },
     { KIOU_HOOK_NAME_MATCH_STREAM_ARGS_CREATE,       KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE,       KIOU_HOOK_RVA_MATCH_STREAM_ARGS_CREATE       },
+    { KIOU_HOOK_NAME_MATCH_START_D3_MOVENEXT,        KIOU_HOOK_ID_MATCH_START_D3_MOVENEXT,        KIOU_HOOK_RVA_MATCH_START_D3_MOVENEXT        },
+    { KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_SEND_ASYNC, KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC, KIOU_HOOK_RVA_MATCH_STREAM_HANDLER_SEND_ASYNC },
     // Direct-call sites (no chinlan cave / no hook id):
     { KIOU_HOOK_NAME_BACK_TO_TITLE_RUN_ASYNC,     -1,                                       KIOU_HOOK_RVA_BACK_TO_TITLE_RUN_ASYNC     },
     { KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT,      -1,                                       KIOU_HOOK_RVA_NSS_SETHASHSIZE_DIRECT      },

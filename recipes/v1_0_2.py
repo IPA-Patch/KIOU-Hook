@@ -103,5 +103,18 @@ SITES = [
     (0x5D0A78C, "ff0301d1", "KIOU_HOOK_ID_MATCH_GET_VALID_FOUND",          CAVE_ENTRY, "MatchingHandler.GetValidMatchFoundStatus"),
     (0x5D0C408, "ff0303d1", "KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT", CAVE_ENTRY, "MatchingHandler+<ReceiveWithTimeoutAsync>d__6.MoveNext"),
     (0x5BCF8CC, "fc6fbaa9", "KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE",       CAVE_ENTRY, "IShogiMatchStreamArgs.Create"),
+    # d__3 wraps the caller state around StartMatchingAsyncInternal — we
+    # snapshot its <>8__1 (DisplayClass3_0) pointer so the seat-filter
+    # reject branch can Cancel() its matchingCts and let the game's own
+    # TryLeaveQueueAsync unwind the popup cleanly.
+    (0x5D0DA8C, "ffc305d1", "KIOU_HOOK_ID_MATCH_START_D3_MOVENEXT",        CAVE_ENTRY, "MatchingHandler+<StartMatchingAsync>d__3.MoveNext"),
+    # ShogiMatchStreamHandler.SendAsync — every outgoing frame the game
+    # writes to the matching stream (Heartbeat every 3 s, JoinQueue,
+    # LeaveQueue, ConnectionFailed) flows through this call. We hook the
+    # entry so we can (a) log every outbound frame and (b) capture the
+    # MethodInfo argument (x2) into a global so the seat-filter reject
+    # branch can call SendAsync directly with a valid MethodInfo instead
+    # of NULL (which crashes the il2cpp method body).
+    (0x5BD00E0, "f657bda9", "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC", CAVE_ENTRY, "ShogiMatchStreamHandler.SendAsync"),
 ]
 # fmt: on

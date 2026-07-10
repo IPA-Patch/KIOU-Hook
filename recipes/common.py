@@ -102,6 +102,8 @@ HOOK_IDS: dict[str, int] = {
     "KIOU_HOOK_ID_MATCH_GET_VALID_FOUND":          40,
     "KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT": 41,
     "KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE":       42,
+    "KIOU_HOOK_ID_MATCH_START_D3_MOVENEXT":        43,
+    "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC": 44,
 }
 
 # Entry slot indices — one per CAVE_ENTRY row, must mirror KIOUHook.h.
@@ -147,9 +149,11 @@ ENTRY_SLOT_INDEX: dict[str, int] = {
     "KIOU_HOOK_ID_MATCH_GET_VALID_FOUND":          35,
     "KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT": 36,
     "KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE":       37,
+    "KIOU_HOOK_ID_MATCH_START_D3_MOVENEXT":        38,
+    "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC": 39,
 }
 
-ENTRY_SLOT_COUNT    = 38
+ENTRY_SLOT_COUNT    = 40
 ENTRY_SLOT_CAPACITY = 48   # reserved sibling room for future entry hooks
 
 # ---------------------------------------------------------------------------
