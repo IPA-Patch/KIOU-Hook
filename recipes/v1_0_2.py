@@ -116,5 +116,29 @@ SITES = [
     # branch can call SendAsync directly with a valid MethodInfo instead
     # of NULL (which crashes the il2cpp method body).
     (0x5BD00E0, "f657bda9", "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC", CAVE_ENTRY, "ShogiMatchStreamHandler.SendAsync"),
+
+    # --- Universal gRPC wire logger (protobuf serialize/parse bottlenecks) ---
+    # Sites verified against IngameService.__Helper_SerializeMessage
+    # (0x5C75918) and IngameService.__Helper_DeserializeMessage<object>
+    # (0x2465FC4) BL disassembly on 1.0.2:
+    #
+    #   Serialize path       : ToByteArray (0x52C071C) OR
+    #                          WriteTo(IBufferWriter<byte>) (0x52C0DB8)
+    #   Deserialize path     : MessageParser<T>.ParseFrom(ROSeq)
+    #                          → MessageExtensions.MergeFrom(msg, ROSeq,
+    #                            bool, ExtensionRegistry) (0x52C042C)
+    #
+    # The stream / byte[] variants (0x52C08E0, 0x52C185C) never fire on
+    # the KIOU gRPC path, so we skip them. MergeFrom(CIS) (0x52C1B18)
+    # covers any residual CIS-based path (nested submessage parses fall
+    # under it too, giving a coverage backstop).
+    #
+    # Prologues extracted from assets/1.0.2/Kiou-1.0.2.ipa UnityFramework
+    # on 2026-07-10; none are PC-relative so the first-4-byte relocation
+    # into the cave tail is safe.
+    (0x52C071C, "f657bda9", "KIOU_HOOK_ID_MSG_EXT_TO_BYTE_ARRAY",       CAVE_ENTRY, "MessageExtensions.ToByteArray"),
+    (0x52C0DB8, "ff0302d1", "KIOU_HOOK_ID_MSG_EXT_WRITE_TO_BUFFER",     CAVE_ENTRY, "MessageExtensions.WriteTo(IBufferWriter)"),
+    (0x52C042C, "ff4304d1", "KIOU_HOOK_ID_MSG_EXT_MERGE_FROM_ROSEQ",    CAVE_ENTRY, "MessageExtensions.MergeFrom(IMessage, ROSeq, bool, ExtensionRegistry)"),
+    (0x52C1B18, "ffc301d1", "KIOU_HOOK_ID_MSG_PARSER_MERGE_FROM_CODED", CAVE_ENTRY, "MessageParser.MergeFrom(CodedInputStream)"),
 ]
 # fmt: on

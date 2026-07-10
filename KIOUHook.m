@@ -63,6 +63,11 @@ const char KIOU_HOOK_NAME_MATCH_RECEIVE_TIMEOUT_MOVENEXT[]  = "match_receive_tim
 const char KIOU_HOOK_NAME_MATCH_STREAM_ARGS_CREATE[]        = "match_stream_args_create";
 const char KIOU_HOOK_NAME_MATCH_START_D3_MOVENEXT[]         = "match_start_d3_movenext";
 const char KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_SEND_ASYNC[] = "match_stream_handler_send_async";
+// Universal gRPC wire logger — Google.Protobuf serialize/parse bottlenecks.
+const char KIOU_HOOK_NAME_MSG_EXT_TO_BYTE_ARRAY[]       = "msg_ext_to_byte_array";
+const char KIOU_HOOK_NAME_MSG_EXT_WRITE_TO_BUFFER[]     = "msg_ext_write_to_buffer";
+const char KIOU_HOOK_NAME_MSG_EXT_MERGE_FROM_ROSEQ[]    = "msg_ext_merge_from_roseq";
+const char KIOU_HOOK_NAME_MSG_PARSER_MERGE_FROM_CODED[] = "msg_parser_merge_from_coded";
 // Direct-ABI helpers (KiouEditor, 1.0.1). hook_id = -1 in the catalog.
 const char KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT[]       = "nss_set_hash_size_direct";
 const char KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT[]      = "game_object_get_component";
@@ -126,6 +131,11 @@ static const KIOUHookEntry kCatalog[] = {
     { KIOU_HOOK_NAME_MATCH_STREAM_ARGS_CREATE,       KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE,       KIOU_HOOK_RVA_MATCH_STREAM_ARGS_CREATE       },
     { KIOU_HOOK_NAME_MATCH_START_D3_MOVENEXT,        KIOU_HOOK_ID_MATCH_START_D3_MOVENEXT,        KIOU_HOOK_RVA_MATCH_START_D3_MOVENEXT        },
     { KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_SEND_ASYNC, KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC, KIOU_HOOK_RVA_MATCH_STREAM_HANDLER_SEND_ASYNC },
+    // Universal gRPC wire logger — Google.Protobuf serialize/parse bottlenecks.
+    { KIOU_HOOK_NAME_MSG_EXT_TO_BYTE_ARRAY,       KIOU_HOOK_ID_MSG_EXT_TO_BYTE_ARRAY,       KIOU_HOOK_RVA_MSG_EXT_TO_BYTE_ARRAY       },
+    { KIOU_HOOK_NAME_MSG_EXT_WRITE_TO_BUFFER,     KIOU_HOOK_ID_MSG_EXT_WRITE_TO_BUFFER,     KIOU_HOOK_RVA_MSG_EXT_WRITE_TO_BUFFER     },
+    { KIOU_HOOK_NAME_MSG_EXT_MERGE_FROM_ROSEQ,    KIOU_HOOK_ID_MSG_EXT_MERGE_FROM_ROSEQ,    KIOU_HOOK_RVA_MSG_EXT_MERGE_FROM_ROSEQ    },
+    { KIOU_HOOK_NAME_MSG_PARSER_MERGE_FROM_CODED, KIOU_HOOK_ID_MSG_PARSER_MERGE_FROM_CODED, KIOU_HOOK_RVA_MSG_PARSER_MERGE_FROM_CODED },
     // Direct-call sites (no chinlan cave / no hook id):
     { KIOU_HOOK_NAME_BACK_TO_TITLE_RUN_ASYNC,     -1,                                       KIOU_HOOK_RVA_BACK_TO_TITLE_RUN_ASYNC     },
     { KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT,      -1,                                       KIOU_HOOK_RVA_NSS_SETHASHSIZE_DIRECT      },
