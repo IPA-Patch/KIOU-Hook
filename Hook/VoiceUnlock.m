@@ -65,9 +65,11 @@ void KIOUEditorInstallVoiceUnlockHook(uintptr_t unityBase) {
     s_origCharacterVoicePlayer_SatisfiesRule = (SatisfiesRule_t)KIOUHookInstall(
         KIOU_HOOK_NAME_VOICE_PLAYER_SATISFIES,
         (void *)hook_CharacterVoicePlayer_SatisfiesRule, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_VOICE_PLAYER_SATISFIES, hook_CharacterVoicePlayer_SatisfiesRule);
     s_origVoiceCellModel_get_IsLocked = (GetIsLocked_t)KIOUHookInstall(
         KIOU_HOOK_NAME_VOICE_CELL_GET_IS_LOCKED,
         (void *)hook_VoiceCellModel_get_IsLocked, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_VOICE_CELL_GET_IS_LOCKED, hook_VoiceCellModel_get_IsLocked);
     IPALog([NSString stringWithFormat:
             @"[VOICE] installed: SatisfiesRule orig=%p CellModel.get_IsLocked orig=%p",
             (void *)s_origCharacterVoicePlayer_SatisfiesRule,

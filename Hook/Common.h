@@ -126,6 +126,14 @@ typedef NS_ENUM(NSInteger, KiouFeature) {
     KIOU_FEATURE_VOICE_UNLOCK,       // Hook/VoiceUnlock + SyncItemList intimacy pin
     KIOU_FEATURE_ASSIST_ENABLE,      // Hook/AssistEnable force enabled + depth
     KIOU_FEATURE_DISABLE_AFK,        // Hook/AfkDisable suppress AFK warning + auto-surrender
+    // Consumer-owned tweak-specific features. Defined here so the shared
+    // KIOUEditorFeatureEnabled surface can gate them, but the hook bodies
+    // that consume these flags live in the consumer tweak (KiouEditor)
+    // because the sites are tweak-local and not part of the shared catalog.
+    KIOU_FEATURE_INGAME_ANALYSIS,    // KiouEditor Hook_AssistTune BSE.EvaluateAsync suppression
+    KIOU_FEATURE_AI_SPECIAL_SUPPORT, // KiouEditor Hook_AiSpecialSupport 棋桜覚醒 unlock (default off)
+    KIOU_FEATURE_KIFU_AUTOSAVE,      // KiouEditor Kif/ pipeline — write .kif on OnMatchEndAsync
+    KIOU_FEATURE_SEAT_FILTER,        // KiouEditor Hook/MatchingFilter — reject unwanted seat (default off)
     KIOU_FEATURE_COUNT,
 };
 
@@ -157,6 +165,31 @@ void    KIOUEditorSetAssistHashIndex(int32_t idx);
 int32_t KIOUEditorAssistHashMB(void);
 
 // ---------------------------------------------------------------------------
+// Chinlan slot publish helper.
+//
+// KIOUHookInstall() on the chinlan branch does NOT write the entry slot the
+// cave will BLR through — it only returns the cave-bypass entry. Each hook
+// installer must therefore ALSO write its slot before UnityFramework's
+// first call reaches the cave. This macro keeps the pattern one-liner and
+// no-ops on JB / jailed where MSHookFunction already rewrote the site.
+//
+// Usage inside an installer:
+//   s_orig = (fn_t)KIOUHookInstall(NAME, (void *)hook_fn, unityBase);
+//   KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_X, hook_fn);
+// ---------------------------------------------------------------------------
+#if IPA_CHINLAN
+#define KIOU_HOOK_PUBLISH_SLOT(unityBase, slot_id, hook_fn) do {                 \
+    void * volatile *_entrySlots =                                                \
+        (void * volatile *)((unityBase) + KIOU_HOOK_ENTRY_SLOT_BASE_RVA);         \
+    _entrySlots[(slot_id)] = (void *)(hook_fn);                                   \
+} while (0)
+#else
+#define KIOU_HOOK_PUBLISH_SLOT(unityBase, slot_id, hook_fn) do {                 \
+    (void)(unityBase); (void)(slot_id); (void)(hook_fn);                          \
+} while (0)
+#endif
+
+// ---------------------------------------------------------------------------
 // Per-module hook installers. Each takes the UnityFramework base and calls
 // KIOUHookInstall for every site it owns. Safe to call multiple times;
 // guarded by KIOUHookInstall's own idempotency.
@@ -173,3 +206,4 @@ void KIOUEditorInstallSyncItemListHook(uintptr_t unityBase);
 void KIOUEditorInstallVersionHook(uintptr_t unityBase);
 void KIOUEditorInstallVoiceUnlockHook(uintptr_t unityBase);
 void KIOUEditorInstallFriendUnhideHook(uintptr_t unityBase);
+void KIOUEditorInstallAiSpecialSupportHook(uintptr_t unityBase);
