@@ -22,11 +22,10 @@
 //   TitleMenuPopupPresenter.RunDeleteAccountSequenceAsync   (raw site, not in catalog)
 // ===========================================================================
 
-// RunReset / RunDelete are not in the catalog (not binpatched / not part
-// of the cave system); keep their RVAs local so the hook installer can
-// MSHookFunction them on JB.
-#define KF_RVA_RUN_RESET_USER_DATA_SEQ       0x5DCC204
-#define KF_RVA_RUN_DELETE_ACCOUNT_SEQ        0x5DCC2B4
+// RunReset / RunDelete have no cave (they aren't binpatched), so they are
+// JB-only MSHookFunction targets. Their addresses still come from the
+// catalog — as hook_id = -1 rows — so they track the build's target
+// version like everything else.
 
 // ---------------------------------------------------------------------------
 // Field offsets
@@ -394,13 +393,12 @@ void KIOUInstallAccountObserveHook(uintptr_t unityBase) {
     KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_GET_SELF_PROFILE_MOVENEXT, KIOUHookGetSelfProfileMoveNext);
 
 #if IPA_CHINLAN
-    (void)KF_RVA_RUN_RESET_USER_DATA_SEQ;
-    (void)KF_RVA_RUN_DELETE_ACCOUNT_SEQ;
     IPALog(@"[ACCOUNT] resolved: variant=chinlan catalogHooks=yes rawRvaHooks=skipped");
 #else
     // RunReset / RunDelete are JB-only sites (no chinlan cave for them).
     {
-        uintptr_t addr = unityBase + KF_RVA_RUN_RESET_USER_DATA_SEQ;
+        uintptr_t addr = KIOUHookSiteAddr(
+            KIOU_HOOK_NAME_RUN_RESET_USER_DATA_SEQ, unityBase);
         void *orig = NULL;
         MSHookFunction((void *)addr, (void *)KIOUHookRunResetUserDataSeq, &orig);
         s_origRunResetSeq = (RunResetSeq_t)orig;
@@ -408,7 +406,8 @@ void KIOUInstallAccountObserveHook(uintptr_t unityBase) {
                   @"[ACCOUNT] hooked: target=RunResetUserDataSeq addr=0x%lx", (unsigned long)addr]);
     }
     {
-        uintptr_t addr = unityBase + KF_RVA_RUN_DELETE_ACCOUNT_SEQ;
+        uintptr_t addr = KIOUHookSiteAddr(
+            KIOU_HOOK_NAME_RUN_DELETE_ACCOUNT_SEQ, unityBase);
         void *orig = NULL;
         MSHookFunction((void *)addr, (void *)KIOUHookRunDeleteAccountSeq, &orig);
         s_origRunDeleteAccountSeq = (RunResetSeq_t)orig;

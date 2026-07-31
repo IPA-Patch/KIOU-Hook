@@ -156,6 +156,12 @@ NSString *KIOUEditorFeatureLabel(KiouFeature f);
 // applied inside EnsureInitializedLocked once the native session is alive.
 // ---------------------------------------------------------------------------
 
+// Depth / skill level / hash size drive the NNUE search that KIOU <= 1.0.2
+// used. From 1.1.0 the assist is a policy model with a single knob — how
+// many candidate moves the policy head returns — so builds targeting
+// build 15 and up use KIOUEditorAssistTopN() instead.
+int32_t KIOUEditorAssistTopN(void);
+void    KIOUEditorSetAssistTopN(int32_t v);
 int32_t KIOUEditorAssistDepth(void);
 void    KIOUEditorSetAssistDepth(int32_t v);
 int32_t KIOUEditorAssistSkillLevel(void);

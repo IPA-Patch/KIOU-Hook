@@ -62,7 +62,7 @@ SITES = [
     # Upstream site for x-user-id swap on account switch. Avoids the
     # HttpMessageInvoker.SendAsync / Yaha borrow path that crashes when
     # the request or HttpHeaders internal dictionary is touched.
-    (0x5BD9EE8, "f657bda9", "KIOU_HOOK_ID_HEADER_PROVIDER_SET_OR_UPDATE_HEADER", CAVE_ENTRY, "Project.Network.HeaderProvider.SetOrUpdateHeader"),
+    (0x5BD9EE8, "f657bda9", "KIOU_HOOK_ID_HEADER_PROVIDER_SET_OR_UPDATE_HEADER", CAVE_ENTRY, "Project.Network.HeaderProvider.SetOrUpdateHeader(string, string)"),
 
     # --- KiouEditor entry caves (CAVE_ENTRY, 1.0.2 port of the 1.0.1 sites) ---
     # RVAs verified against assets/1.0.2/dump.cs on 2026-07-01. Prologues
@@ -136,10 +136,10 @@ SITES = [
     # Prologues extracted from assets/1.0.2/Kiou-1.0.2.ipa UnityFramework
     # on 2026-07-10; none are PC-relative so the first-4-byte relocation
     # into the cave tail is safe.
-    (0x52C071C, "f657bda9", "KIOU_HOOK_ID_MSG_EXT_TO_BYTE_ARRAY",       CAVE_ENTRY, "MessageExtensions.ToByteArray"),
-    (0x52C0DB8, "ff0302d1", "KIOU_HOOK_ID_MSG_EXT_WRITE_TO_BUFFER",     CAVE_ENTRY, "MessageExtensions.WriteTo(IBufferWriter)"),
-    (0x52C042C, "ff4304d1", "KIOU_HOOK_ID_MSG_EXT_MERGE_FROM_ROSEQ",    CAVE_ENTRY, "MessageExtensions.MergeFrom(IMessage, ROSeq, bool, ExtensionRegistry)"),
-    (0x52C1B18, "ffc301d1", "KIOU_HOOK_ID_MSG_PARSER_MERGE_FROM_CODED", CAVE_ENTRY, "MessageParser.MergeFrom(CodedInputStream)"),
+    (0x52C071C, "f657bda9", "KIOU_HOOK_ID_MSG_EXT_TO_BYTE_ARRAY",       CAVE_ENTRY, "Google.Protobuf.MessageExtensions.ToByteArray(IMessage)"),
+    (0x52C0DB8, "ff0302d1", "KIOU_HOOK_ID_MSG_EXT_WRITE_TO_BUFFER",     CAVE_ENTRY, "Google.Protobuf.MessageExtensions.WriteTo(IMessage, IBufferWriter<byte>)"),
+    (0x52C042C, "ff4304d1", "KIOU_HOOK_ID_MSG_EXT_MERGE_FROM_ROSEQ",    CAVE_ENTRY, "Google.Protobuf.MessageExtensions.MergeFrom(IMessage, ReadOnlySequence<byte>, bool, ExtensionRegistry)"),
+    (0x52C1B18, "ffc301d1", "KIOU_HOOK_ID_MSG_PARSER_MERGE_FROM_CODED", CAVE_ENTRY, "Google.Protobuf.MessageParser.MergeFrom(IMessage, CodedInputStream)"),
 
     # ShogiMatchStreamHandler.DisposeAsync — appended AFTER the MSG_* rows so
     # its position in SITES matches its HOOK_ID (49). ChinlanDispatcher's

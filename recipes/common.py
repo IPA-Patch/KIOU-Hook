@@ -327,15 +327,25 @@ def build_exports(sites, afk_site, afk_orig_8, hook_slot_rva, entry_slot_base_rv
             )
         )
 
+    # A row whose site is None is a placeholder: the method it patched no
+    # longer exists in this build. Its cave must still be reserved, because
+    # ChinlanDispatcher addresses a cave as cave_start + hook_id * cave_size
+    # and every later hook would otherwise shift down by one slot. The
+    # driver writes nothing for it and reserves len(expected) bytes, so
+    # `expected` carries one payload's worth of zeroes and the builder is
+    # never called.
     cave_patches = [
         (
             site,
-            bytes.fromhex(prologue_hex),
-            payload_for_site(
+            bytes(CAVE_PAYLOAD_SIZE) if site is None
+            else bytes.fromhex(prologue_hex),
+            None if site is None else payload_for_site(
                 site, bytes.fromhex(prologue_hex), hook_id_name, kind,
                 hook_slot_rva, entry_slot_base_rva,
             ),
-            f"{label}: route to KIOU-Hook {kind} cave ({hook_id_name})",
+            f"{label}: route to KIOU-Hook {kind} cave ({hook_id_name})"
+            if site is not None
+            else f"{label}: absent from this build ({hook_id_name})",
         )
         for site, prologue_hex, hook_id_name, kind, label in sites
     ]
@@ -343,6 +353,7 @@ def build_exports(sites, afk_site, afk_orig_8, hook_slot_rva, entry_slot_base_rv
     sites_index = [
         (HOOK_IDS[hook_id_name], site_rva, prologue_hex, label)
         for site_rva, prologue_hex, hook_id_name, kind, label in sites
+        if site_rva is not None
     ]
 
     return patches, cave_patches, sites_index

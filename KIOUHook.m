@@ -76,10 +76,21 @@ const char KIOU_HOOK_NAME_NSS_SEARCHMULTIPV[]           = "nss_search_multipv";
 const char KIOU_HOOK_NAME_NSS_SEARCHMULTIWITHPV[]       = "nss_search_multi_with_pv";
 const char KIOU_HOOK_NAME_NSS_SEARCHMULTIPVWITHPV[]     = "nss_search_multipv_with_pv";
 const char KIOU_HOOK_NAME_NSS_SETOPTION[]               = "nss_set_option";
-// Direct-ABI helpers (KiouEditor, 1.0.1). hook_id = -1 in the catalog.
+// Direct-ABI helpers — invoked verbatim via KIOUHookSiteAddr rather than
+// hooked, so they carry hook_id = -1 in the catalog and have no recipe row.
 const char KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT[]       = "nss_set_hash_size_direct";
+const char KIOU_HOOK_NAME_NSS_SETOPTION_DIRECT[]         = "nss_set_option_direct";
 const char KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT[]      = "game_object_get_component";
 const char KIOU_HOOK_NAME_RTU_WORLDTOSCREENPOINT[]       = "rectxform_world_to_screen_point";
+const char KIOU_HOOK_NAME_JSON_FORMATTER_GET_DEFAULT[]   = "json_formatter_get_default";
+const char KIOU_HOOK_NAME_JSON_FORMATTER_FORMAT[]        = "json_formatter_format";
+const char KIOU_HOOK_NAME_GAMECTRL_GET_USI_TEXT[]        = "gamectrl_get_usi_text";
+const char KIOU_HOOK_NAME_POSITION_TO_SFEN[]             = "position_to_sfen";
+const char KIOU_HOOK_NAME_USIPARSER_PARSE_USI[]          = "usiparser_parse_usi";
+const char KIOU_HOOK_NAME_KIFWRITEOPTIONS_CTOR[]         = "kifwriteoptions_ctor";
+const char KIOU_HOOK_NAME_KIFWRITER_WRITE[]              = "kifwriter_write";
+const char KIOU_HOOK_NAME_RUN_RESET_USER_DATA_SEQ[]      = "run_reset_user_data_seq";
+const char KIOU_HOOK_NAME_RUN_DELETE_ACCOUNT_SEQ[]       = "run_delete_account_seq";
 
 // hook_id < 0 → not an entry hook (no g_inject_entry slot, e.g. observer
 // caves or a site that's only invoked directly via KIOUHookSiteAddr).
@@ -155,8 +166,18 @@ static const KIOUHookEntry kCatalog[] = {
     // Direct-call sites (no chinlan cave / no hook id):
     { KIOU_HOOK_NAME_BACK_TO_TITLE_RUN_ASYNC,     -1,                                       KIOU_HOOK_RVA_BACK_TO_TITLE_RUN_ASYNC     },
     { KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT,      -1,                                       KIOU_HOOK_RVA_NSS_SETHASHSIZE_DIRECT      },
+    { KIOU_HOOK_NAME_NSS_SETOPTION_DIRECT,        -1,                                       KIOU_HOOK_RVA_NSS_SETOPTION_DIRECT        },
     { KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT,     -1,                                       KIOU_HOOK_RVA_GAMEOBJECT_GETCOMPONENT     },
     { KIOU_HOOK_NAME_RTU_WORLDTOSCREENPOINT,      -1,                                       KIOU_HOOK_RVA_RTU_WORLDTOSCREENPOINT      },
+    { KIOU_HOOK_NAME_JSON_FORMATTER_GET_DEFAULT,  -1,                                       KIOU_HOOK_RVA_JSON_FORMATTER_GET_DEFAULT  },
+    { KIOU_HOOK_NAME_JSON_FORMATTER_FORMAT,       -1,                                       KIOU_HOOK_RVA_JSON_FORMATTER_FORMAT       },
+    { KIOU_HOOK_NAME_GAMECTRL_GET_USI_TEXT,       -1,                                       KIOU_HOOK_RVA_GAMECTRL_GET_USI_TEXT       },
+    { KIOU_HOOK_NAME_POSITION_TO_SFEN,            -1,                                       KIOU_HOOK_RVA_POSITION_TO_SFEN            },
+    { KIOU_HOOK_NAME_USIPARSER_PARSE_USI,         -1,                                       KIOU_HOOK_RVA_USIPARSER_PARSE_USI         },
+    { KIOU_HOOK_NAME_KIFWRITEOPTIONS_CTOR,        -1,                                       KIOU_HOOK_RVA_KIFWRITEOPTIONS_CTOR        },
+    { KIOU_HOOK_NAME_KIFWRITER_WRITE,             -1,                                       KIOU_HOOK_RVA_KIFWRITER_WRITE             },
+    { KIOU_HOOK_NAME_RUN_RESET_USER_DATA_SEQ,     -1,                                       KIOU_HOOK_RVA_RUN_RESET_USER_DATA_SEQ     },
+    { KIOU_HOOK_NAME_RUN_DELETE_ACCOUNT_SEQ,      -1,                                       KIOU_HOOK_RVA_RUN_DELETE_ACCOUNT_SEQ      },
     { NULL,                                        0,                                       0                                            },
 };
 
@@ -177,7 +198,10 @@ static void *s_jbOrig[KIOU_HOOK_ID__COUNT] = {0};
 
 uintptr_t KIOUHookSiteAddr(const char *name, uintptr_t unityBase) {
     const KIOUHookEntry *e = findEntry(name);
-    return e ? unityBase + e->site_rva : 0;
+    // site_rva 0 means the target build doesn't have this method; return 0
+    // so callers see "unresolved" rather than a pointer to the image base.
+    if (!e || e->site_rva == 0) return 0;
+    return unityBase + e->site_rva;
 }
 
 void *KIOUHookOrig(const char *name) {
@@ -204,6 +228,10 @@ void *KIOUHookInstall(const char *name, void *replacement, uintptr_t unityBase) 
     return g_inject_entry[e->hook_id];
 #else
     if (!replacement || e->hook_id < 0) return NULL;
+    // site_rva 0 marks a site the target build doesn't have (the recipe
+    // carries a placeholder row for it). Hooking would land on the image
+    // base, so refuse.
+    if (e->site_rva == 0) return NULL;
     uintptr_t addr = unityBase + e->site_rva;
     void *orig = NULL;
     MSHookFunction((void *)addr, replacement, &orig);

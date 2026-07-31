@@ -10,8 +10,8 @@ from __future__ import annotations
 import importlib
 import os
 
+from recipes.common import DYLIB_PATH as _DEFAULT_DYLIB_PATH
 from recipes.common import (
-    DYLIB_PATH as _DEFAULT_DYLIB_PATH,
     ENTRY_SLOT_CAPACITY,
     ENTRY_SLOT_COUNT,
     ENTRY_SLOT_INDEX,
@@ -56,6 +56,7 @@ __all__ = [
 _VERSIONS: dict[str, str | None] = {
     "1.0.1": "recipes.v1_0_1",
     "1.0.2": "recipes.v1_0_2",
+    "1.1.0": "recipes.v1_1_0",
 }
 
 _DEFAULT_VERSION = "1.0.2"
