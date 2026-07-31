@@ -62,12 +62,20 @@ const char KIOU_HOOK_NAME_MATCH_GET_VALID_FOUND[]           = "match_get_valid_f
 const char KIOU_HOOK_NAME_MATCH_RECEIVE_TIMEOUT_MOVENEXT[]  = "match_receive_timeout_movenext";
 const char KIOU_HOOK_NAME_MATCH_STREAM_ARGS_CREATE[]        = "match_stream_args_create";
 const char KIOU_HOOK_NAME_MATCH_START_D3_MOVENEXT[]         = "match_start_d3_movenext";
-const char KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_SEND_ASYNC[] = "match_stream_handler_send_async";
+const char KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_SEND_ASYNC[]    = "match_stream_handler_send_async";
+const char KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_DISPOSE_ASYNC[] = "match_stream_handler_dispose_async";
 // Universal gRPC wire logger — Google.Protobuf serialize/parse bottlenecks.
 const char KIOU_HOOK_NAME_MSG_EXT_TO_BYTE_ARRAY[]       = "msg_ext_to_byte_array";
 const char KIOU_HOOK_NAME_MSG_EXT_WRITE_TO_BUFFER[]     = "msg_ext_write_to_buffer";
 const char KIOU_HOOK_NAME_MSG_EXT_MERGE_FROM_ROSEQ[]    = "msg_ext_merge_from_roseq";
 const char KIOU_HOOK_NAME_MSG_PARSER_MERGE_FROM_CODED[] = "msg_parser_merge_from_coded";
+// NativeSyncSession Search* variants.
+const char KIOU_HOOK_NAME_NSS_SEARCH[]                  = "nss_search";
+const char KIOU_HOOK_NAME_NSS_SEARCHMULTI[]             = "nss_search_multi";
+const char KIOU_HOOK_NAME_NSS_SEARCHMULTIPV[]           = "nss_search_multipv";
+const char KIOU_HOOK_NAME_NSS_SEARCHMULTIWITHPV[]       = "nss_search_multi_with_pv";
+const char KIOU_HOOK_NAME_NSS_SEARCHMULTIPVWITHPV[]     = "nss_search_multipv_with_pv";
+const char KIOU_HOOK_NAME_NSS_SETOPTION[]               = "nss_set_option";
 // Direct-ABI helpers (KiouEditor, 1.0.1). hook_id = -1 in the catalog.
 const char KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT[]       = "nss_set_hash_size_direct";
 const char KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT[]      = "game_object_get_component";
@@ -130,12 +138,20 @@ static const KIOUHookEntry kCatalog[] = {
     { KIOU_HOOK_NAME_MATCH_RECEIVE_TIMEOUT_MOVENEXT, KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT, KIOU_HOOK_RVA_MATCH_RECEIVE_TIMEOUT_MOVENEXT },
     { KIOU_HOOK_NAME_MATCH_STREAM_ARGS_CREATE,       KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE,       KIOU_HOOK_RVA_MATCH_STREAM_ARGS_CREATE       },
     { KIOU_HOOK_NAME_MATCH_START_D3_MOVENEXT,        KIOU_HOOK_ID_MATCH_START_D3_MOVENEXT,        KIOU_HOOK_RVA_MATCH_START_D3_MOVENEXT        },
-    { KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_SEND_ASYNC, KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC, KIOU_HOOK_RVA_MATCH_STREAM_HANDLER_SEND_ASYNC },
+    { KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_SEND_ASYNC,    KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC,    KIOU_HOOK_RVA_MATCH_STREAM_HANDLER_SEND_ASYNC    },
+    { KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_DISPOSE_ASYNC, KIOU_HOOK_ID_MATCH_STREAM_HANDLER_DISPOSE_ASYNC, KIOU_HOOK_RVA_MATCH_STREAM_HANDLER_DISPOSE_ASYNC },
     // Universal gRPC wire logger — Google.Protobuf serialize/parse bottlenecks.
     { KIOU_HOOK_NAME_MSG_EXT_TO_BYTE_ARRAY,       KIOU_HOOK_ID_MSG_EXT_TO_BYTE_ARRAY,       KIOU_HOOK_RVA_MSG_EXT_TO_BYTE_ARRAY       },
     { KIOU_HOOK_NAME_MSG_EXT_WRITE_TO_BUFFER,     KIOU_HOOK_ID_MSG_EXT_WRITE_TO_BUFFER,     KIOU_HOOK_RVA_MSG_EXT_WRITE_TO_BUFFER     },
     { KIOU_HOOK_NAME_MSG_EXT_MERGE_FROM_ROSEQ,    KIOU_HOOK_ID_MSG_EXT_MERGE_FROM_ROSEQ,    KIOU_HOOK_RVA_MSG_EXT_MERGE_FROM_ROSEQ    },
     { KIOU_HOOK_NAME_MSG_PARSER_MERGE_FROM_CODED, KIOU_HOOK_ID_MSG_PARSER_MERGE_FROM_CODED, KIOU_HOOK_RVA_MSG_PARSER_MERGE_FROM_CODED },
+    // NativeSyncSession Search* variants:
+    { KIOU_HOOK_NAME_NSS_SEARCH,                  KIOU_HOOK_ID_NSS_SEARCH,                  KIOU_HOOK_RVA_NSS_SEARCH                  },
+    { KIOU_HOOK_NAME_NSS_SEARCHMULTI,             KIOU_HOOK_ID_NSS_SEARCHMULTI,             KIOU_HOOK_RVA_NSS_SEARCHMULTI             },
+    { KIOU_HOOK_NAME_NSS_SEARCHMULTIPV,           KIOU_HOOK_ID_NSS_SEARCHMULTIPV,           KIOU_HOOK_RVA_NSS_SEARCHMULTIPV           },
+    { KIOU_HOOK_NAME_NSS_SEARCHMULTIWITHPV,       KIOU_HOOK_ID_NSS_SEARCHMULTIWITHPV,       KIOU_HOOK_RVA_NSS_SEARCHMULTIWITHPV       },
+    { KIOU_HOOK_NAME_NSS_SEARCHMULTIPVWITHPV,     KIOU_HOOK_ID_NSS_SEARCHMULTIPVWITHPV,     KIOU_HOOK_RVA_NSS_SEARCHMULTIPVWITHPV     },
+    { KIOU_HOOK_NAME_NSS_SETOPTION,               KIOU_HOOK_ID_NSS_SETOPTION,               KIOU_HOOK_RVA_NSS_SETOPTION               },
     // Direct-call sites (no chinlan cave / no hook id):
     { KIOU_HOOK_NAME_BACK_TO_TITLE_RUN_ASYNC,     -1,                                       KIOU_HOOK_RVA_BACK_TO_TITLE_RUN_ASYNC     },
     { KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT,      -1,                                       KIOU_HOOK_RVA_NSS_SETHASHSIZE_DIRECT      },

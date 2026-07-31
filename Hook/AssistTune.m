@@ -45,6 +45,10 @@ static void hook_BSE_ctor(void *self, void *evalPath, void *settings) {
     if (s_origBSE_ctor) {
         s_origBSE_ctor(self, evalPath, settings);
     }
+    // Feed the consumer the raw evalPath il2cpp String* so it can spin up
+    // a diagnostic USI session against the same nn weights. Consumer-side
+    // guard ensures the dump only fires once per boot.
+    KIOUEditorNotifyBseEvalPath(evalPath);
     // Tune evaluator parameters regardless of ASSIST_ENABLE; the user
     // controls the engaged hint arrow via that flag in Hook/AssistEnable.
     if (!ptrLooksValid(self)) return;
@@ -68,6 +72,14 @@ static void hook_BSE_ctor(void *self, void *evalPath, void *settings) {
     }
 }
 
+// Cache the (session, mb) tuple we last programmed so EnsureInitializedLocked
+// firing on every EvaluateAsync doesn't re-zero the transposition table each
+// move. Reallocating 256 MB per move stalls the render loop far more than the
+// search itself. When session ptr rolls over (new BSE instance) or the user
+// changes the hashMB setting, we reprogram; otherwise skip.
+static void *   s_lastSizedSession = NULL;
+static int32_t  s_lastSizedMB      = 0;
+
 static void hook_BSE_ensureInit(void *self) {
     if (s_origBSE_ensureInit) {
         s_origBSE_ensureInit(self);
@@ -80,16 +92,23 @@ static void hook_BSE_ensureInit(void *self) {
             // Nothing to size; let the next EvaluateAsync retry.
             return;
         }
+        int32_t mb = KIOUEditorAssistHashMB();
+        if (session == s_lastSizedSession && mb == s_lastSizedMB) {
+            // Already programmed on this session at this MB — skip. Prevents
+            // per-move TT re-zero storms flagged in FrameworkPassthrough logs.
+            return;
+        }
         uintptr_t setHashAddr = KIOUHookSiteAddr(
             KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT, g_unityBaseForAssist);
         if (setHashAddr == 0) {
             IPALog(@"[ASSIST-TUNE] skipped: reason=setHashSizeSiteUnresolved");
             return;
         }
-        int32_t mb = KIOUEditorAssistHashMB();
         NSS_SetHashSize_directABI_t setHash =
             (NSS_SetHashSize_directABI_t)setHashAddr;
         setHash(session, mb, NULL);
+        s_lastSizedSession = session;
+        s_lastSizedMB      = mb;
         IPALog([NSString stringWithFormat:
                 @"[ASSIST-TUNE] applied: scope=ensureInitializedLocked hashSizeMB=%d session=%p",
                 mb, session]);
@@ -104,7 +123,11 @@ static void hook_BSE_ensureInit(void *self) {
 // so surrounding lifecycle code is unaffected; only the expensive search
 // path is suppressed, which quiets the CPU and prevents device heating.
 static void hook_BSE_evaluate_async(void *self, void *position, void *methodInfo) {
-    if (!KIOUEditorFeatureEnabled(KIOU_FEATURE_INGAME_ANALYSIS)) {
+    BOOL gate = KIOUEditorFeatureEnabled(KIOU_FEATURE_INGAME_ANALYSIS);
+    IPALog([NSString stringWithFormat:
+            @"[BSE] evaluate: enter gate=%d self=%p position=%p origResolved=%d",
+            (int)gate, self, position, s_origBSE_evaluateAsync != NULL]);
+    if (!gate) {
         return;
     }
     if (s_origBSE_evaluateAsync) {

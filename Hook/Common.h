@@ -166,6 +166,15 @@ int32_t KIOUEditorAssistHashMB(void);
 int32_t KIOUEditorAssistNodesIndex(void);
 void    KIOUEditorSetAssistNodesIndex(int32_t idx);
 int32_t KIOUEditorAssistNodesLimit(void);  // 0 == disabled
+int32_t KIOUEditorAssistMultiPvCap(void);  // 0 == pass-through, N>0 forces top-N
+void    KIOUEditorSetAssistMultiPvCap(int32_t v);
+
+// Called from Hook/AssistTune.m hook_BSE_ctor with the raw evalPath il2cpp
+// String* the game passed to BSE. Consumer captures it, decodes to UTF-8,
+// and (once per boot) kicks off an asynchronous `usi`-command diagnostic
+// dump against Rshogi's USI C ABI so the built-in option defaults become
+// observable in the log.
+void    KIOUEditorNotifyBseEvalPath(void *evalPathIl2cppStr);
 
 // ---------------------------------------------------------------------------
 // Chinlan slot publish helper.

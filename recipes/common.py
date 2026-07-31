@@ -103,7 +103,8 @@ HOOK_IDS: dict[str, int] = {
     "KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT": 41,
     "KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE":       42,
     "KIOU_HOOK_ID_MATCH_START_D3_MOVENEXT":        43,
-    "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC": 44,
+    "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC":    44,
+    "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_DISPOSE_ASYNC": 49,
     # Universal gRPC wire logger — every protobuf request/response passes
     # through one of these four Google.Protobuf bottlenecks. Verified
     # against IngameService.__Helper_SerializeMessage / DeserializeMessage
@@ -114,6 +115,20 @@ HOOK_IDS: dict[str, int] = {
     "KIOU_HOOK_ID_MSG_EXT_WRITE_TO_BUFFER":       46,
     "KIOU_HOOK_ID_MSG_EXT_MERGE_FROM_ROSEQ":      47,
     "KIOU_HOOK_ID_MSG_PARSER_MERGE_FROM_CODED":   48,
+    # NativeSyncSession Search* variants (BSE's real search path — SearchFull
+    # is only the single-position API). SITES position must match HOOK_ID
+    # because ChinlanDispatcher.bypassEntryForHook(id) does cave_start +
+    # id*cave_size; new rows always go at the end.
+    "KIOU_HOOK_ID_NSS_SEARCH":                    50,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTI":               51,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTIPV":             52,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTIWITHPV":         53,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTIPVWITHPV":       54,
+    # NSS.SetOption(name, value). Also called directly from FrameworkPassthrough
+    # via the raw RVA pointer, so those internal calls will re-enter the hook
+    # body and produce their own log line — that's intentional (lets us see
+    # both game-issued and tweak-issued option writes on one timeline).
+    "KIOU_HOOK_ID_NSS_SETOPTION":                 55,
 }
 
 # Entry slot indices — one per CAVE_ENTRY row, must mirror KIOUHook.h.
@@ -160,15 +175,22 @@ ENTRY_SLOT_INDEX: dict[str, int] = {
     "KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT": 36,
     "KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE":       37,
     "KIOU_HOOK_ID_MATCH_START_D3_MOVENEXT":        38,
-    "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC": 39,
+    "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC":    39,
+    "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_DISPOSE_ASYNC": 44,
     "KIOU_HOOK_ID_MSG_EXT_TO_BYTE_ARRAY":         40,
     "KIOU_HOOK_ID_MSG_EXT_WRITE_TO_BUFFER":       41,
     "KIOU_HOOK_ID_MSG_EXT_MERGE_FROM_ROSEQ":      42,
     "KIOU_HOOK_ID_MSG_PARSER_MERGE_FROM_CODED":   43,
+    "KIOU_HOOK_ID_NSS_SEARCH":                    45,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTI":               46,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTIPV":             47,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTIWITHPV":         48,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTIPVWITHPV":       49,
+    "KIOU_HOOK_ID_NSS_SETOPTION":                 50,
 }
 
-ENTRY_SLOT_COUNT    = 44
-ENTRY_SLOT_CAPACITY = 48   # reserved sibling room for future entry hooks
+ENTRY_SLOT_COUNT    = 51
+ENTRY_SLOT_CAPACITY = 56   # reserved sibling room for future entry hooks
 
 # ---------------------------------------------------------------------------
 # Cave payload builders

@@ -140,5 +140,36 @@ SITES = [
     (0x52C0DB8, "ff0302d1", "KIOU_HOOK_ID_MSG_EXT_WRITE_TO_BUFFER",     CAVE_ENTRY, "MessageExtensions.WriteTo(IBufferWriter)"),
     (0x52C042C, "ff4304d1", "KIOU_HOOK_ID_MSG_EXT_MERGE_FROM_ROSEQ",    CAVE_ENTRY, "MessageExtensions.MergeFrom(IMessage, ROSeq, bool, ExtensionRegistry)"),
     (0x52C1B18, "ffc301d1", "KIOU_HOOK_ID_MSG_PARSER_MERGE_FROM_CODED", CAVE_ENTRY, "MessageParser.MergeFrom(CodedInputStream)"),
+
+    # ShogiMatchStreamHandler.DisposeAsync — appended AFTER the MSG_* rows so
+    # its position in SITES matches its HOOK_ID (49). ChinlanDispatcher's
+    # bypassEntryForHook(id) computes `cave_start + id * cave_size` and the
+    # patcher allocates cave memory in SITES order — the two must agree, so
+    # new hooks always go at the end.
+    #
+    # This is the full-teardown primitive for the matching stream. The
+    # server only marks the seat as gone when the underlying gRPC HTTP/2
+    # duplex call is closed (LeaveQueue frames without a stream close are
+    # ignored — same match_room_id keeps getting served). We hook the entry
+    # to capture the MethodInfo so the seat-filter reject branch can invoke
+    # DisposeAsync directly on the cached handler self.
+    (0x5BCFEF4, "ff4302d1", "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_DISPOSE_ASYNC", CAVE_ENTRY, "ShogiMatchStreamHandler.DisposeAsync"),
+
+    # --- NativeSyncSession Search* variants ---
+    # BSE.EvaluateAsync fans out over legal candidates via SearchMulti /
+    # SearchMultiWithPV, NOT the single-position SearchFull that
+    # FrameworkPassthrough already covers. Adding these 5 catches every
+    # engine invocation the game side can issue so the KiouEditor logger
+    # sees each search's per-move score + PV.
+    #
+    # Prologues verified on 2026-07-12 against assets/1.0.2/Kiou-1.0.2.ipa
+    # UnityFramework. All are `sub sp, sp, #imm` (PC-independent), safe to
+    # relocate verbatim into the cave tail.
+    (0x5D37A50, "ffc300d1", "KIOU_HOOK_ID_NSS_SEARCH",              CAVE_ENTRY, "NativeSyncSession.Search"),
+    (0x5D383A4, "ffc302d1", "KIOU_HOOK_ID_NSS_SEARCHMULTI",         CAVE_ENTRY, "NativeSyncSession.SearchMulti"),
+    (0x5D390A0, "ff4302d1", "KIOU_HOOK_ID_NSS_SEARCHMULTIPV",       CAVE_ENTRY, "NativeSyncSession.SearchMultiPV"),
+    (0x5D3960C, "ff4303d1", "KIOU_HOOK_ID_NSS_SEARCHMULTIWITHPV",   CAVE_ENTRY, "NativeSyncSession.SearchMultiWithPV"),
+    (0x5D3A38C, "ff8302d1", "KIOU_HOOK_ID_NSS_SEARCHMULTIPVWITHPV", CAVE_ENTRY, "NativeSyncSession.SearchMultiPVWithPV"),
+    (0x5D37694, "ff8301d1", "KIOU_HOOK_ID_NSS_SETOPTION",            CAVE_ENTRY, "NativeSyncSession.SetOption"),
 ]
 # fmt: on

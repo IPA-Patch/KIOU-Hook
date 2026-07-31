@@ -144,6 +144,19 @@ enum kiou_hook_id {
     KIOU_HOOK_ID_MSG_EXT_WRITE_TO_BUFFER,
     KIOU_HOOK_ID_MSG_EXT_MERGE_FROM_ROSEQ,
     KIOU_HOOK_ID_MSG_PARSER_MERGE_FROM_CODED,
+    // Appended after MSG_* so numeric IDs stay stable — must match
+    // HOOK_IDS in vendor/KIOU-Hook/recipes/common.py.
+    KIOU_HOOK_ID_MATCH_STREAM_HANDLER_DISPOSE_ASYNC,
+    // NativeSyncSession Search* variants — BSE's real search path fans
+    // out over legal candidates via SearchMulti / SearchMultiWithPV
+    // (SearchFull is only used for one-shot single-position queries).
+    // Appended at the end so numeric IDs stay stable.
+    KIOU_HOOK_ID_NSS_SEARCH,
+    KIOU_HOOK_ID_NSS_SEARCHMULTI,
+    KIOU_HOOK_ID_NSS_SEARCHMULTIPV,
+    KIOU_HOOK_ID_NSS_SEARCHMULTIWITHPV,
+    KIOU_HOOK_ID_NSS_SEARCHMULTIPVWITHPV,
+    KIOU_HOOK_ID_NSS_SETOPTION,
 
     KIOU_HOOK_ID__COUNT,
 };
@@ -198,6 +211,16 @@ enum kiou_hook_slot_id {
     KIOU_HOOK_SLOT_MSG_EXT_WRITE_TO_BUFFER,
     KIOU_HOOK_SLOT_MSG_EXT_MERGE_FROM_ROSEQ,
     KIOU_HOOK_SLOT_MSG_PARSER_MERGE_FROM_CODED,
+    // Appended after MSG_* so slot indices stay stable — must match
+    // ENTRY_SLOT_INDEX in vendor/KIOU-Hook/recipes/common.py.
+    KIOU_HOOK_SLOT_MATCH_STREAM_HANDLER_DISPOSE_ASYNC,
+    // NativeSyncSession Search* variants — see enum kiou_hook_id above.
+    KIOU_HOOK_SLOT_NSS_SEARCH,
+    KIOU_HOOK_SLOT_NSS_SEARCHMULTI,
+    KIOU_HOOK_SLOT_NSS_SEARCHMULTIPV,
+    KIOU_HOOK_SLOT_NSS_SEARCHMULTIWITHPV,
+    KIOU_HOOK_SLOT_NSS_SEARCHMULTIPVWITHPV,
+    KIOU_HOOK_SLOT_NSS_SETOPTION,
 
     KIOU_HOOK_SLOT__COUNT,
 };
@@ -265,11 +288,19 @@ enum kiou_hook_slot_id {
 #define KIOU_HOOK_RVA_MATCH_STREAM_ARGS_CREATE        0x5BCF8CC
 #define KIOU_HOOK_RVA_MATCH_START_D3_MOVENEXT         0x5D0DA8C
 #define KIOU_HOOK_RVA_MATCH_STREAM_HANDLER_SEND_ASYNC 0x5BD00E0
+#define KIOU_HOOK_RVA_MATCH_STREAM_HANDLER_DISPOSE_ASYNC 0x5BCFEF4
 // Universal gRPC wire logger (Google.Protobuf bottlenecks, 1.0.2 RVAs).
 #define KIOU_HOOK_RVA_MSG_EXT_TO_BYTE_ARRAY         0x52C071C
 #define KIOU_HOOK_RVA_MSG_EXT_WRITE_TO_BUFFER       0x52C0DB8
 #define KIOU_HOOK_RVA_MSG_EXT_MERGE_FROM_ROSEQ      0x52C042C
 #define KIOU_HOOK_RVA_MSG_PARSER_MERGE_FROM_CODED   0x52C1B18
+// NativeSyncSession Search* variants (1.0.2 RVAs).
+#define KIOU_HOOK_RVA_NSS_SEARCH                    0x5D37A50
+#define KIOU_HOOK_RVA_NSS_SEARCHMULTI               0x5D383A4
+#define KIOU_HOOK_RVA_NSS_SEARCHMULTIPV             0x5D390A0
+#define KIOU_HOOK_RVA_NSS_SEARCHMULTIWITHPV         0x5D3960C
+#define KIOU_HOOK_RVA_NSS_SEARCHMULTIPVWITHPV       0x5D3A38C
+#define KIOU_HOOK_RVA_NSS_SETOPTION                 0x5D37694
 
 // --- Direct-ABI helper RVAs (1.0.2) --------------------------------------
 // Not hook sites; KiouEditor bodies look these up via KIOUHookSiteAddr to
@@ -356,11 +387,19 @@ extern const char KIOU_HOOK_NAME_MATCH_RECEIVE_TIMEOUT_MOVENEXT[];
 extern const char KIOU_HOOK_NAME_MATCH_STREAM_ARGS_CREATE[];
 extern const char KIOU_HOOK_NAME_MATCH_START_D3_MOVENEXT[];
 extern const char KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_SEND_ASYNC[];
+extern const char KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_DISPOSE_ASYNC[];
 // Universal gRPC wire logger.
 extern const char KIOU_HOOK_NAME_MSG_EXT_TO_BYTE_ARRAY[];
 extern const char KIOU_HOOK_NAME_MSG_EXT_WRITE_TO_BUFFER[];
 extern const char KIOU_HOOK_NAME_MSG_EXT_MERGE_FROM_ROSEQ[];
 extern const char KIOU_HOOK_NAME_MSG_PARSER_MERGE_FROM_CODED[];
+// NativeSyncSession Search* variants.
+extern const char KIOU_HOOK_NAME_NSS_SEARCH[];
+extern const char KIOU_HOOK_NAME_NSS_SEARCHMULTI[];
+extern const char KIOU_HOOK_NAME_NSS_SEARCHMULTIPV[];
+extern const char KIOU_HOOK_NAME_NSS_SEARCHMULTIWITHPV[];
+extern const char KIOU_HOOK_NAME_NSS_SEARCHMULTIPVWITHPV[];
+extern const char KIOU_HOOK_NAME_NSS_SETOPTION[];
 // Direct-ABI helper lookups (KiouEditor, 1.0.1). hook_id = -1 in the catalog.
 extern const char KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT[];
 extern const char KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT[];
