@@ -31,7 +31,8 @@ void KIOUEditorInstallAfkDisableHook(uintptr_t unityBase) {
     s_origGO_IsAfkEnabled = (GameOrchestratorIsAfkEnabled_t)KIOUHookInstall(
         KIOU_HOOK_NAME_GAME_ORCHESTRATOR_IS_AFK,
         (void *)hook_GO_IsAfkEnabled, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_GAME_ORCHESTRATOR_IS_AFK, hook_GO_IsAfkEnabled);
     IPALog([NSString stringWithFormat:
-            @"[AFK] installed: orig=%p (toggled by KIOU_FEATURE_DISABLE_AFK)",
+            @"[AFK] installed: orig=%p gate=KIOU_FEATURE_DISABLE_AFK",
             (void *)s_origGO_IsAfkEnabled]);
 }

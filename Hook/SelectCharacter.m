@@ -50,7 +50,12 @@ static ReplyMergeFrom_t       s_origSelectCharacterReplyMerge = NULL;
 
 static void *hook_SelectCharacterAsync(void *self, void *args, void *opts,
                                        void *a3, void *a4, void *a5) {
-    if (!KIOUEditorFeatureEnabled(KIOU_FEATURE_CHAR_BYPASS)) {
+    bool gate = KIOUEditorFeatureEnabled(KIOU_FEATURE_CHAR_BYPASS);
+    int32_t requestedRaw = ptrLooksValid(args) ? readI32(args, OFF_ARGS_SKIN_ID) : -1;
+    IPALog([NSString stringWithFormat:
+            @"[SELECT-REQ] fire: feature=%s requested=%d persisted=%d",
+            gate ? "on" : "off", requestedRaw, KIOUEditorPersistedSelection()]);
+    if (!gate) {
         return s_origSelectCharacterAsync(self, args, opts, a3, a4, a5);
     }
     if (ptrLooksValid(args)) {
@@ -59,16 +64,16 @@ static void *hook_SelectCharacterAsync(void *self, void *args, void *opts,
             KIOUEditorSetPersistedSelection(requested);
             writeI32(args, OFF_ARGS_SKIN_ID, KIOU_SAFE_SKIN_ID);
             IPALog([NSString stringWithFormat:
-                    @"[SELECT][REQ] user=%d -> server=%d (persisted)",
+                    @"[SELECT-REQ] applied: user=%d server=%d persisted=true",
                     requested, KIOU_SAFE_SKIN_ID]);
         } else if (requested == KIOU_SAFE_SKIN_ID) {
             // The user explicitly picked the safe skin. Drop any override.
             if (KIOUEditorPersistedSelection() != 0) {
                 KIOUEditorSetPersistedSelection(0);
-                IPALog(@"[SELECT][REQ] user picked SAFE_ID; cleared persisted override");
+                IPALog(@"[SELECT-REQ] deleted: field=persistedOverride reason=safeId");
             } else {
                 IPALog([NSString stringWithFormat:
-                        @"[SELECT][REQ] passthrough skinId=%d", requested]);
+                        @"[SELECT-REQ] skipped: reason=passthrough skinId=%d", requested]);
             }
         }
     }
@@ -86,7 +91,11 @@ static void hook_SelectCharacterReplyMerge(void *self, void *parseContext) {
     if (s_origSelectCharacterReplyMerge) {
         s_origSelectCharacterReplyMerge(self, parseContext);
     }
-    if (!KIOUEditorFeatureEnabled(KIOU_FEATURE_CHAR_BYPASS)) return;
+    bool gate = KIOUEditorFeatureEnabled(KIOU_FEATURE_CHAR_BYPASS);
+    IPALog([NSString stringWithFormat:
+            @"[SELECT-RESP] fire: feature=%s self=%p persisted=%d",
+            gate ? "on" : "off", self, KIOUEditorPersistedSelection()]);
+    if (!gate) return;
     if (!ptrLooksValid(self)) return;
 
     @try {
@@ -99,13 +108,13 @@ static void hook_SelectCharacterReplyMerge(void *self, void *parseContext) {
         readRepeatedField(self, OFF_REPLY_SKIN_LIST, &skinArr, &skinCount);
 
         IPALog([NSString stringWithFormat:
-                @"[SELECT][RESP] charCount=%d skinCount=%d persisted=%d",
+                @"[SELECT-RESP] resolved: charCount=%d skinCount=%d persisted=%d",
                 charCount, skinCount, KIOUEditorPersistedSelection()]);
 
         KIOUEditorApplyPersistedSelectionToLists(charArr, charCount, skinArr, skinCount);
     } @catch (NSException *e) {
         IPALog([NSString stringWithFormat:
-                @"[SELECT][RESP] exception: %@", e]);
+                @"[SELECT-RESP] exception: error=%@", e]);
     }
 }
 
@@ -117,12 +126,14 @@ void KIOUEditorInstallSelectCharacterHook(uintptr_t unityBase) {
     s_origSelectCharacterAsync = (SelectCharacterAsync_t)KIOUHookInstall(
         KIOU_HOOK_NAME_SELECT_CHAR_ASYNC,
         (void *)hook_SelectCharacterAsync, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_SELECT_CHAR_ASYNC, hook_SelectCharacterAsync);
     s_origSelectCharacterReplyMerge = (ReplyMergeFrom_t)KIOUHookInstall(
         KIOU_HOOK_NAME_SELECT_CHAR_REPLY_MERGE,
         (void *)hook_SelectCharacterReplyMerge, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_SELECT_CHAR_REPLY_MERGE, hook_SelectCharacterReplyMerge);
     IPALog([NSString stringWithFormat:
-            @"[SELECT] installed: Async orig=%p Reply.merge orig=%p "
-            @"SAFE_ID=%d persisted=%d",
+            @"[SELECT] installed: asyncOrig=%p replyMergeOrig=%p "
+            @"safeId=%d persisted=%d",
             (void *)s_origSelectCharacterAsync,
             (void *)s_origSelectCharacterReplyMerge,
             KIOU_SAFE_SKIN_ID, KIOUEditorPersistedSelection()]);

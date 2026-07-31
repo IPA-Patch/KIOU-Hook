@@ -10,9 +10,10 @@
 // import il2cpp.h / logging.h / chinlan.h explicitly in the .m files that
 // need them.
 //
-// Pair-of-truth note: the `enum kiou_hook_id` and `KIOU_HOOK_RVA_*`
-// macros mirror `recipes/common.py` HOOK_IDS and the per-version SITES
-// tables. Update both sides together.
+// Pair-of-truth note: `enum kiou_hook_id` mirrors `recipes/common.py`
+// HOOK_IDS, and each `rva/kiou_rva_<ver>.h` mirrors that version's SITES
+// table. Update the recipe first, then regenerate the rva/ header;
+// tools/check_recipes.py fails the build when the two drift.
 //
 // Hook authors should NOT reference the enum or RVA macros directly. Use
 // the name-based API below (KIOUHookOrig / KIOUHookInstall / KIOUHookSiteAddr)
@@ -35,27 +36,49 @@
 #endif
 
 // ---------------------------------------------------------------------------
-// Cave geometry and dispatcher slot RVAs.
+// Target selection.
+//
+// Every address in this catalog moves on each KIOU build, so the site RVAs
+// and the two dispatcher-slot RVAs live in per-version headers under rva/,
+// each generated from the matching recipes/v<ver>.py. Consumers select one
+// by defining KIOU_HOOK_TARGET_BUILD (the target's CFBundleVersion) on the
+// compiler command line; KiouEditor's Makefile derives it from
+// TARGET_VERSION. The default matches the default recipe.
+//
+// The JB / jailed builds resolve through these macros (KIOUHookInstall →
+// MSHookFunction); the chinlan build reads the recipe directly. Both sides
+// must agree, which is what tools/check_recipes.py enforces.
+// ---------------------------------------------------------------------------
+#ifndef KIOU_HOOK_TARGET_BUILD
+#define KIOU_HOOK_TARGET_BUILD 12
+#endif
+
+#if KIOU_HOOK_TARGET_BUILD == 11
+#import "rva/kiou_rva_1_0_1.h"
+#elif KIOU_HOOK_TARGET_BUILD == 12
+#import "rva/kiou_rva_1_0_2.h"
+#elif KIOU_HOOK_TARGET_BUILD == 15
+#import "rva/kiou_rva_1_1_0.h"
+#else
+#error "KIOU_HOOK_TARGET_BUILD must be 11 (1.0.1), 12 (1.0.2) or 15 (1.1.0)"
+#endif
+
+// ---------------------------------------------------------------------------
+// Cave geometry.
+//
+// KIOU_HOOK_OBSERVER_SLOT_RVA (the single slot every CAVE_OBSERVER cave
+// BLRs through) and KIOU_HOOK_ENTRY_SLOT_BASE_RVA (slot N at +N*8, BLRed
+// directly by CAVE_ENTRY caves) come from the header selected above. Both
+// deliberately sit in __DATA.__common: the original 1.0.2 placement was in
+// __bss, which UnityRuntime / il2cpp overwrites during lazy init, so the
+// published pointer survived startup but was clobbered before the first
+// observer fire and the cave's BLR X16 jumped to garbage.
 // ---------------------------------------------------------------------------
 
-// Single observer-dispatcher slot. Every CAVE_OBSERVER cave loads this
-// pointer, BLRs it with W6 = hook_id, and routes through dispatch_one.
-//
-// Placement: sits inside __DATA.__common just past the entry-slot table
-// capacity (ENTRY_SLOT_BASE_RVA + ENTRY_SLOT_CAPACITY * 8 = 0x091E92B8).
-// The old 0x8F90C80 landed in __DATA.__bss, which UnityRuntime / il2cpp
-// overwrites during lazy init — publishing dispatch_one there survived
-// startup but got clobbered before the first observer fire, so the cave
-// BLR X16 jumped to garbage and crashed with a PC alignment fault. See
-// recipes/v1_0_2.py for the __common vs __bss note.
-#define KIOU_HOOK_OBSERVER_SLOT_RVA            0x091E92B8
-
-// Entry-cave slot table. Slot N at +N*8 holds the function pointer the
-// CAVE_ENTRY cave BLRs directly (no dispatcher).
-#define KIOU_HOOK_ENTRY_SLOT_BASE_RVA      0x091E91B8
-
-// Cave payload region (matches recipes/common.py + per-version CAVE_REGION).
-#define KIOU_HOOK_CAVE_REGION_START        0x826F5E8
+// Cave payload region. KIOU_HOOK_CAVE_REGION_START defaults to the selected
+// version's CAVE_REGION[0] (see the rva/ header); a consumer may still
+// override it on the command line. The two must agree — a mismatch sends
+// every orig-call trampoline into random code.
 #define KIOU_HOOK_CAVE_SIZE                84
 #define KIOU_HOOK_CAVE_BYPASS_OFFSET       (KIOU_HOOK_CAVE_SIZE - 8)
 
@@ -110,6 +133,38 @@ enum kiou_hook_id {
     KIOU_HOOK_ID_UIBUTTONBASE_ONPOINTERCLICK,
     KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT,
     KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK,
+    KIOU_HOOK_ID_BSE_EVALUATE_ASYNC,
+    KIOU_HOOK_ID_MOVE_RESULT_CAN_USE_SPECIAL,
+    KIOU_HOOK_ID_MOVE_RESULT_FREE_REMAINING,
+    KIOU_HOOK_ID_MOVE_RESULT_TICKET_REMAINING,
+    KIOU_HOOK_ID_MP_FREE_REMAINING,
+    KIOU_HOOK_ID_MP_PAID_AVAILABLE,
+    // Matching-seat filter (ported from KiouEngineBridge Hook_MatchingFilterObserve).
+    KIOU_HOOK_ID_MATCH_GET_VALID_FOUND,
+    KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT,
+    KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE,
+    KIOU_HOOK_ID_MATCH_START_D3_MOVENEXT,
+    KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC,
+    // Universal gRPC wire logger — every protobuf serialize/parse call
+    // in grpc-dotnet routes through one of these four bottlenecks
+    // (Google.Protobuf, verified against IngameService serializer BLs).
+    KIOU_HOOK_ID_MSG_EXT_TO_BYTE_ARRAY,
+    KIOU_HOOK_ID_MSG_EXT_WRITE_TO_BUFFER,
+    KIOU_HOOK_ID_MSG_EXT_MERGE_FROM_ROSEQ,
+    KIOU_HOOK_ID_MSG_PARSER_MERGE_FROM_CODED,
+    // Appended after MSG_* so numeric IDs stay stable — must match
+    // HOOK_IDS in vendor/KIOU-Hook/recipes/common.py.
+    KIOU_HOOK_ID_MATCH_STREAM_HANDLER_DISPOSE_ASYNC,
+    // NativeSyncSession Search* variants — BSE's real search path fans
+    // out over legal candidates via SearchMulti / SearchMultiWithPV
+    // (SearchFull is only used for one-shot single-position queries).
+    // Appended at the end so numeric IDs stay stable.
+    KIOU_HOOK_ID_NSS_SEARCH,
+    KIOU_HOOK_ID_NSS_SEARCHMULTI,
+    KIOU_HOOK_ID_NSS_SEARCHMULTIPV,
+    KIOU_HOOK_ID_NSS_SEARCHMULTIWITHPV,
+    KIOU_HOOK_ID_NSS_SEARCHMULTIPVWITHPV,
+    KIOU_HOOK_ID_NSS_SETOPTION,
 
     KIOU_HOOK_ID__COUNT,
 };
@@ -148,65 +203,35 @@ enum kiou_hook_slot_id {
     KIOU_HOOK_SLOT_UIBUTTONBASE_ONPOINTERCLICK,
     KIOU_HOOK_SLOT_TITLE_SCENE_MOVENEXT,
     KIOU_HOOK_SLOT_GAME_ORCHESTRATOR_IS_AFK,
+    KIOU_HOOK_SLOT_BSE_EVALUATE_ASYNC,
+    KIOU_HOOK_SLOT_MOVE_RESULT_CAN_USE_SPECIAL,
+    KIOU_HOOK_SLOT_MOVE_RESULT_FREE_REMAINING,
+    KIOU_HOOK_SLOT_MOVE_RESULT_TICKET_REMAINING,
+    KIOU_HOOK_SLOT_MP_FREE_REMAINING,
+    KIOU_HOOK_SLOT_MP_PAID_AVAILABLE,
+    KIOU_HOOK_SLOT_MATCH_GET_VALID_FOUND,
+    KIOU_HOOK_SLOT_MATCH_RECEIVE_TIMEOUT_MOVENEXT,
+    KIOU_HOOK_SLOT_MATCH_STREAM_ARGS_CREATE,
+    KIOU_HOOK_SLOT_MATCH_START_D3_MOVENEXT,
+    KIOU_HOOK_SLOT_MATCH_STREAM_HANDLER_SEND_ASYNC,
+    // Universal gRPC wire logger slots (Google.Protobuf bottlenecks).
+    KIOU_HOOK_SLOT_MSG_EXT_TO_BYTE_ARRAY,
+    KIOU_HOOK_SLOT_MSG_EXT_WRITE_TO_BUFFER,
+    KIOU_HOOK_SLOT_MSG_EXT_MERGE_FROM_ROSEQ,
+    KIOU_HOOK_SLOT_MSG_PARSER_MERGE_FROM_CODED,
+    // Appended after MSG_* so slot indices stay stable — must match
+    // ENTRY_SLOT_INDEX in vendor/KIOU-Hook/recipes/common.py.
+    KIOU_HOOK_SLOT_MATCH_STREAM_HANDLER_DISPOSE_ASYNC,
+    // NativeSyncSession Search* variants — see enum kiou_hook_id above.
+    KIOU_HOOK_SLOT_NSS_SEARCH,
+    KIOU_HOOK_SLOT_NSS_SEARCHMULTI,
+    KIOU_HOOK_SLOT_NSS_SEARCHMULTIPV,
+    KIOU_HOOK_SLOT_NSS_SEARCHMULTIWITHPV,
+    KIOU_HOOK_SLOT_NSS_SEARCHMULTIPVWITHPV,
+    KIOU_HOOK_SLOT_NSS_SETOPTION,
 
     KIOU_HOOK_SLOT__COUNT,
 };
-
-// ---------------------------------------------------------------------------
-// Site RVAs — used by KIOUHookSiteAddr to compute target addresses.
-// Hook authors: don't reference these directly. Use KIOUHookSiteAddr(name).
-// ---------------------------------------------------------------------------
-#define KIOU_HOOK_RVA_SET_TARGET_FRAMERATE       0x6B718A4
-#define KIOU_HOOK_RVA_NSS_SETHASHSIZE            0x5D379DC
-#define KIOU_HOOK_RVA_NSS_SETSKILLEVEL           0x5D37968
-#define KIOU_HOOK_RVA_NSS_SEARCHFULL             0x5D37A74
-#define KIOU_HOOK_RVA_AI_END                     0x59EA720
-#define KIOU_HOOK_RVA_CPUSTREAM_END              0x59F15D4
-#define KIOU_HOOK_RVA_LOCAL_END                  0x5A046B4
-#define KIOU_HOOK_RVA_ONLINE_END                 0x5A06158
-#define KIOU_HOOK_RVA_REPLAY_END                 0x5A30320
-#define KIOU_HOOK_RVA_ACCOUNT_EXISTS             0x5922CD0
-#define KIOU_HOOK_RVA_LOGIN_ARGS_CREATE          0x5B9DC04
-#define KIOU_HOOK_RVA_REGISTER_USER_ARGS_CREATE  0x5B9DC94
-#define KIOU_HOOK_RVA_RUN_LOGIN_SEQ_MOVENEXT     0x58152BC
-#define KIOU_HOOK_RVA_GET_SELF_PROFILE_MOVENEXT  0x5BB99DC
-#define KIOU_HOOK_RVA_HTTPMSGINVOKER_SEND_ASYNC  0x6082AC0
-#define KIOU_HOOK_RVA_BACK_TO_TITLE_RUN_ASYNC    0x5CFC394
-#define KIOU_HOOK_RVA_HEADER_PROVIDER_SET_OR_UPDATE_HEADER  0x5BD9EE8
-
-// --- KiouEditor hook sites (1.0.1 RVAs) ----------------------------------
-// These pin to KIOU 1.0.1 build 11 because KiouEditor is 1.0.1-only. If a
-// future port maps the same semantic site to a 1.0.2 RVA, the macros above
-// will need version-aware dispatch — for now KiouForge (1.0.2) callers
-// don't reference these.
-#define KIOU_HOOK_RVA_SYNC_ITEM_LIST_MERGE          0x5C37034
-#define KIOU_HOOK_RVA_COLLECTION_PRESET_MERGE       0x5C4065C
-#define KIOU_HOOK_RVA_SELECT_CHAR_ASYNC             0x5CA7C90
-#define KIOU_HOOK_RVA_SELECT_CHAR_REPLY_MERGE       0x5C26DCC
-#define KIOU_HOOK_RVA_MATCHING_PLAYER_MERGE         0x5B4CAEC
-#define KIOU_HOOK_RVA_HISTORY_DETAIL_MERGE          0x5C01328
-#define KIOU_HOOK_RVA_HISTORY_GET_PREMIUM           0x5C00D88
-#define KIOU_HOOK_RVA_KIFU_DETAIL_IS_PREMIUM        0x585B25C
-#define KIOU_HOOK_RVA_VOICE_PLAYER_SATISFIES        0x582B88C
-#define KIOU_HOOK_RVA_VOICE_CELL_GET_IS_LOCKED      0x584ADC0
-#define KIOU_HOOK_RVA_BSE_CTOR                      0x597A448
-#define KIOU_HOOK_RVA_BSE_ENSURE_INITIALIZED        0x597BAFC
-#define KIOU_HOOK_RVA_RBSUPPORT_GET_ENABLED         0x593E630
-#define KIOU_HOOK_RVA_RBSUPPORT_GET_DEPTH           0x593E650
-#define KIOU_HOOK_RVA_HOME_UTILITY_PRESENTER_CTOR   0x5A9F298
-#define KIOU_HOOK_RVA_UIBUTTONBASE_ONPOINTERCLICK   0x5DD1E08
-#define KIOU_HOOK_RVA_TITLE_SCENE_MOVENEXT          0x5DCC728
-#define KIOU_HOOK_RVA_GAME_ORCHESTRATOR_IS_AFK      0x59455D4
-
-// --- Direct-ABI helper RVAs (1.0.1) --------------------------------------
-// Not hook sites; KiouEditor bodies look these up via KIOUHookSiteAddr to
-// call the underlying functions directly. NSS_SETHASHSIZE_DIRECT is the
-// 1.0.1 RVA of NativeSyncSession.SetHashSize — distinct from the
-// NSS_SETHASHSIZE hook above whose macro carries the 1.0.2 RVA used by
-// KiouForge. Catalog rows for these have hook_id = -1.
-#define KIOU_HOOK_RVA_NSS_SETHASHSIZE_DIRECT        0x5D320E0
-#define KIOU_HOOK_RVA_GAMEOBJECT_GETCOMPONENT       0x6BCA6AC
-#define KIOU_HOOK_RVA_RTU_WORLDTOSCREENPOINT        0x6F20040
 
 // ---------------------------------------------------------------------------
 // Dispatcher state — defined by the consumer's ChinlanDispatcher.m.
@@ -269,10 +294,45 @@ extern const char KIOU_HOOK_NAME_HOME_UTILITY_PRESENTER_CTOR[];
 extern const char KIOU_HOOK_NAME_UIBUTTONBASE_ONPOINTERCLICK[];
 extern const char KIOU_HOOK_NAME_TITLE_SCENE_MOVENEXT[];
 extern const char KIOU_HOOK_NAME_GAME_ORCHESTRATOR_IS_AFK[];
-// Direct-ABI helper lookups (KiouEditor, 1.0.1). hook_id = -1 in the catalog.
+extern const char KIOU_HOOK_NAME_BSE_EVALUATE_ASYNC[];
+extern const char KIOU_HOOK_NAME_MOVE_RESULT_CAN_USE_SPECIAL[];
+extern const char KIOU_HOOK_NAME_MOVE_RESULT_FREE_REMAINING[];
+extern const char KIOU_HOOK_NAME_MOVE_RESULT_TICKET_REMAINING[];
+extern const char KIOU_HOOK_NAME_MP_FREE_REMAINING[];
+extern const char KIOU_HOOK_NAME_MP_PAID_AVAILABLE[];
+extern const char KIOU_HOOK_NAME_MATCH_GET_VALID_FOUND[];
+extern const char KIOU_HOOK_NAME_MATCH_RECEIVE_TIMEOUT_MOVENEXT[];
+extern const char KIOU_HOOK_NAME_MATCH_STREAM_ARGS_CREATE[];
+extern const char KIOU_HOOK_NAME_MATCH_START_D3_MOVENEXT[];
+extern const char KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_SEND_ASYNC[];
+extern const char KIOU_HOOK_NAME_MATCH_STREAM_HANDLER_DISPOSE_ASYNC[];
+// Universal gRPC wire logger.
+extern const char KIOU_HOOK_NAME_MSG_EXT_TO_BYTE_ARRAY[];
+extern const char KIOU_HOOK_NAME_MSG_EXT_WRITE_TO_BUFFER[];
+extern const char KIOU_HOOK_NAME_MSG_EXT_MERGE_FROM_ROSEQ[];
+extern const char KIOU_HOOK_NAME_MSG_PARSER_MERGE_FROM_CODED[];
+// NativeSyncSession Search* variants.
+extern const char KIOU_HOOK_NAME_NSS_SEARCH[];
+extern const char KIOU_HOOK_NAME_NSS_SEARCHMULTI[];
+extern const char KIOU_HOOK_NAME_NSS_SEARCHMULTIPV[];
+extern const char KIOU_HOOK_NAME_NSS_SEARCHMULTIWITHPV[];
+extern const char KIOU_HOOK_NAME_NSS_SEARCHMULTIPVWITHPV[];
+extern const char KIOU_HOOK_NAME_NSS_SETOPTION[];
+// Direct-ABI helper lookups — resolved via KIOUHookSiteAddr and called
+// verbatim, never hooked. hook_id = -1 in the catalog.
 extern const char KIOU_HOOK_NAME_NSS_SETHASHSIZE_DIRECT[];
+extern const char KIOU_HOOK_NAME_NSS_SETOPTION_DIRECT[];
 extern const char KIOU_HOOK_NAME_GAMEOBJECT_GETCOMPONENT[];
 extern const char KIOU_HOOK_NAME_RTU_WORLDTOSCREENPOINT[];
+extern const char KIOU_HOOK_NAME_JSON_FORMATTER_GET_DEFAULT[];
+extern const char KIOU_HOOK_NAME_JSON_FORMATTER_FORMAT[];
+extern const char KIOU_HOOK_NAME_GAMECTRL_GET_USI_TEXT[];
+extern const char KIOU_HOOK_NAME_POSITION_TO_SFEN[];
+extern const char KIOU_HOOK_NAME_USIPARSER_PARSE_USI[];
+extern const char KIOU_HOOK_NAME_KIFWRITEOPTIONS_CTOR[];
+extern const char KIOU_HOOK_NAME_KIFWRITER_WRITE[];
+extern const char KIOU_HOOK_NAME_RUN_RESET_USER_DATA_SEQ[];
+extern const char KIOU_HOOK_NAME_RUN_DELETE_ACCOUNT_SEQ[];
 
 // Resolve the orig function pointer for a hook by symbolic name.
 //

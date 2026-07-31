@@ -8,14 +8,19 @@ from recipes.common import CAVE_ENTRY, CAVE_OBSERVER
 BUILD = 12
 
 # Cave payload region (zero-fill tail of UnityFramework __TEXT).
-CAVE_REGION         = (0x826F5E8, 0x8274000)
+# Starts *after* __oslogstring (0x8270000..0x8270023) — the region between
+# __eh_frame end (0x826F5E8) and 0x8270000 is only 0xA18 B (~30 caves)
+# and the 30th and 31st caves straddled the __oslogstring bytes. The
+# post-__oslogstring pad is 0x3FDC B (~194 caves), enough for all 34
+# SITES with zero collision.
+CAVE_REGION         = (0x8270024, 0x8274000)
 
 # Observer dispatcher slot — chinlan caves load this single 8-byte pointer.
 # Sits just past the entry-slot table inside __DATA.__common. The old
 # 0x8F90C80 landed in __DATA.__bss, which il2cpp/UnityRuntime overwrites
 # during lazy init (verified crash: cave BLR X16 jumped to garbage after
 # publish). __common survives publish — entry slots (0x091E91B8..) do.
-HOOK_SLOT_RVA       = 0x091E92B8
+HOOK_SLOT_RVA       = 0x091E93B8
 PROBED_HOOK_SLOT_RVA = HOOK_SLOT_RVA
 
 # Entry-cave slot table — ENTRY_SLOT_BASE_RVA + idx*8 holds each hook fn ptr.
@@ -57,7 +62,7 @@ SITES = [
     # Upstream site for x-user-id swap on account switch. Avoids the
     # HttpMessageInvoker.SendAsync / Yaha borrow path that crashes when
     # the request or HttpHeaders internal dictionary is touched.
-    (0x5BD9EE8, "f657bda9", "KIOU_HOOK_ID_HEADER_PROVIDER_SET_OR_UPDATE_HEADER", CAVE_ENTRY, "Project.Network.HeaderProvider.SetOrUpdateHeader"),
+    (0x5BD9EE8, "f657bda9", "KIOU_HOOK_ID_HEADER_PROVIDER_SET_OR_UPDATE_HEADER", CAVE_ENTRY, "Project.Network.HeaderProvider.SetOrUpdateHeader(string, string)"),
 
     # --- KiouEditor entry caves (CAVE_ENTRY, 1.0.2 port of the 1.0.1 sites) ---
     # RVAs verified against assets/1.0.2/dump.cs on 2026-07-01. Prologues
@@ -82,5 +87,89 @@ SITES = [
     (0x5DD7F54, "f44fbea9", "KIOU_HOOK_ID_UIBUTTONBASE_ONPOINTERCLICK", CAVE_ENTRY, "UIButtonBase.OnPointerClick"),
     (0x5DD2874, "ff0303d1", "KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT",        CAVE_ENTRY, "TitleScene+<OnActivateAsync>d__10.MoveNext"),
     (0x594A034, "f44fbea9", "KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK",    CAVE_ENTRY, "GameOrchestrator.IsAfkEnabled"),
+    (0x5980304, "ff8302d1", "KIOU_HOOK_ID_BSE_EVALUATE_ASYNC",          CAVE_ENTRY, "BeginnerSupportEvaluator.EvaluateAsync"),
+
+    # --- KiouEditor 棋桜覚醒 (AI Special Support) UI-unlock caves. ------------
+    # Server-side reject on the network still applies; this is UI unlock only.
+    (0x5B54F68, "00204339", "KIOU_HOOK_ID_MOVE_RESULT_CAN_USE_SPECIAL",  CAVE_ENTRY, "ShogiMoveResultStatus.get_CanUseAiSpecialSupport"),
+    (0x5B54F38, "00bc40b9", "KIOU_HOOK_ID_MOVE_RESULT_FREE_REMAINING",   CAVE_ENTRY, "ShogiMoveResultStatus.get_AiSpecialSupportRemainingFreeCount"),
+    (0x5B54F48, "00c040b9", "KIOU_HOOK_ID_MOVE_RESULT_TICKET_REMAINING", CAVE_ENTRY, "ShogiMoveResultStatus.get_AiSpecialSupportRemainingTicketCount"),
+    (0x5B50DA4, "006040b9", "KIOU_HOOK_ID_MP_FREE_REMAINING",            CAVE_ENTRY, "ShogiMatchingPlayerStatus.get_AiSpecialSupportFreeRemainingCount"),
+    (0x5B50DB4, "006440b9", "KIOU_HOOK_ID_MP_PAID_AVAILABLE",            CAVE_ENTRY, "ShogiMatchingPlayerStatus.get_AiSpecialSupportPaidAvailableCount"),
+
+    # --- KiouEditor preferred-seat filter (ported from KiouEngineBridge). ----
+    # Reject a MatchFound if it puts the user on the "wrong" seat, then
+    # send ConnectionFailed to the matching server so it re-queues.
+    (0x5D0A78C, "ff0301d1", "KIOU_HOOK_ID_MATCH_GET_VALID_FOUND",          CAVE_ENTRY, "MatchingHandler.GetValidMatchFoundStatus"),
+    (0x5D0C408, "ff0303d1", "KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT", CAVE_ENTRY, "MatchingHandler+<ReceiveWithTimeoutAsync>d__6.MoveNext"),
+    (0x5BCF8CC, "fc6fbaa9", "KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE",       CAVE_ENTRY, "IShogiMatchStreamArgs.Create"),
+    # d__3 wraps the caller state around StartMatchingAsyncInternal — we
+    # snapshot its <>8__1 (DisplayClass3_0) pointer so the seat-filter
+    # reject branch can Cancel() its matchingCts and let the game's own
+    # TryLeaveQueueAsync unwind the popup cleanly.
+    (0x5D0DA8C, "ffc305d1", "KIOU_HOOK_ID_MATCH_START_D3_MOVENEXT",        CAVE_ENTRY, "MatchingHandler+<StartMatchingAsync>d__3.MoveNext"),
+    # ShogiMatchStreamHandler.SendAsync — every outgoing frame the game
+    # writes to the matching stream (Heartbeat every 3 s, JoinQueue,
+    # LeaveQueue, ConnectionFailed) flows through this call. We hook the
+    # entry so we can (a) log every outbound frame and (b) capture the
+    # MethodInfo argument (x2) into a global so the seat-filter reject
+    # branch can call SendAsync directly with a valid MethodInfo instead
+    # of NULL (which crashes the il2cpp method body).
+    (0x5BD00E0, "f657bda9", "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC", CAVE_ENTRY, "ShogiMatchStreamHandler.SendAsync"),
+
+    # --- Universal gRPC wire logger (protobuf serialize/parse bottlenecks) ---
+    # Sites verified against IngameService.__Helper_SerializeMessage
+    # (0x5C75918) and IngameService.__Helper_DeserializeMessage<object>
+    # (0x2465FC4) BL disassembly on 1.0.2:
+    #
+    #   Serialize path       : ToByteArray (0x52C071C) OR
+    #                          WriteTo(IBufferWriter<byte>) (0x52C0DB8)
+    #   Deserialize path     : MessageParser<T>.ParseFrom(ROSeq)
+    #                          → MessageExtensions.MergeFrom(msg, ROSeq,
+    #                            bool, ExtensionRegistry) (0x52C042C)
+    #
+    # The stream / byte[] variants (0x52C08E0, 0x52C185C) never fire on
+    # the KIOU gRPC path, so we skip them. MergeFrom(CIS) (0x52C1B18)
+    # covers any residual CIS-based path (nested submessage parses fall
+    # under it too, giving a coverage backstop).
+    #
+    # Prologues extracted from assets/1.0.2/Kiou-1.0.2.ipa UnityFramework
+    # on 2026-07-10; none are PC-relative so the first-4-byte relocation
+    # into the cave tail is safe.
+    (0x52C071C, "f657bda9", "KIOU_HOOK_ID_MSG_EXT_TO_BYTE_ARRAY",       CAVE_ENTRY, "Google.Protobuf.MessageExtensions.ToByteArray(IMessage)"),
+    (0x52C0DB8, "ff0302d1", "KIOU_HOOK_ID_MSG_EXT_WRITE_TO_BUFFER",     CAVE_ENTRY, "Google.Protobuf.MessageExtensions.WriteTo(IMessage, IBufferWriter<byte>)"),
+    (0x52C042C, "ff4304d1", "KIOU_HOOK_ID_MSG_EXT_MERGE_FROM_ROSEQ",    CAVE_ENTRY, "Google.Protobuf.MessageExtensions.MergeFrom(IMessage, ReadOnlySequence<byte>, bool, ExtensionRegistry)"),
+    (0x52C1B18, "ffc301d1", "KIOU_HOOK_ID_MSG_PARSER_MERGE_FROM_CODED", CAVE_ENTRY, "Google.Protobuf.MessageParser.MergeFrom(IMessage, CodedInputStream)"),
+
+    # ShogiMatchStreamHandler.DisposeAsync — appended AFTER the MSG_* rows so
+    # its position in SITES matches its HOOK_ID (49). ChinlanDispatcher's
+    # bypassEntryForHook(id) computes `cave_start + id * cave_size` and the
+    # patcher allocates cave memory in SITES order — the two must agree, so
+    # new hooks always go at the end.
+    #
+    # This is the full-teardown primitive for the matching stream. The
+    # server only marks the seat as gone when the underlying gRPC HTTP/2
+    # duplex call is closed (LeaveQueue frames without a stream close are
+    # ignored — same match_room_id keeps getting served). We hook the entry
+    # to capture the MethodInfo so the seat-filter reject branch can invoke
+    # DisposeAsync directly on the cached handler self.
+    (0x5BCFEF4, "ff4302d1", "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_DISPOSE_ASYNC", CAVE_ENTRY, "ShogiMatchStreamHandler.DisposeAsync"),
+
+    # --- NativeSyncSession Search* variants ---
+    # BSE.EvaluateAsync fans out over legal candidates via SearchMulti /
+    # SearchMultiWithPV, NOT the single-position SearchFull that
+    # FrameworkPassthrough already covers. Adding these 5 catches every
+    # engine invocation the game side can issue so the KiouEditor logger
+    # sees each search's per-move score + PV.
+    #
+    # Prologues verified on 2026-07-12 against assets/1.0.2/Kiou-1.0.2.ipa
+    # UnityFramework. All are `sub sp, sp, #imm` (PC-independent), safe to
+    # relocate verbatim into the cave tail.
+    (0x5D37A50, "ffc300d1", "KIOU_HOOK_ID_NSS_SEARCH",              CAVE_ENTRY, "NativeSyncSession.Search"),
+    (0x5D383A4, "ffc302d1", "KIOU_HOOK_ID_NSS_SEARCHMULTI",         CAVE_ENTRY, "NativeSyncSession.SearchMulti"),
+    (0x5D390A0, "ff4302d1", "KIOU_HOOK_ID_NSS_SEARCHMULTIPV",       CAVE_ENTRY, "NativeSyncSession.SearchMultiPV"),
+    (0x5D3960C, "ff4303d1", "KIOU_HOOK_ID_NSS_SEARCHMULTIWITHPV",   CAVE_ENTRY, "NativeSyncSession.SearchMultiWithPV"),
+    (0x5D3A38C, "ff8302d1", "KIOU_HOOK_ID_NSS_SEARCHMULTIPVWITHPV", CAVE_ENTRY, "NativeSyncSession.SearchMultiPVWithPV"),
+    (0x5D37694, "ff8301d1", "KIOU_HOOK_ID_NSS_SETOPTION",            CAVE_ENTRY, "NativeSyncSession.SetOption"),
 ]
 # fmt: on

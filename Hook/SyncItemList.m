@@ -60,6 +60,15 @@ static void hook_SyncItemListReply_merge(void *self, void *parseContext) {
         s_origSyncItemListReply_merge(self, parseContext);
     }
 
+    IPALog([NSString stringWithFormat:
+            @"[SYNC-ITEM-LIST-REPLY] fire: self=%p item=%s voice=%s char=%s "
+            @"persisted=%d reentrant=%d",
+            self,
+            KIOUEditorFeatureEnabled(KIOU_FEATURE_ITEM_UNLOCK)  ? "on" : "off",
+            KIOUEditorFeatureEnabled(KIOU_FEATURE_VOICE_UNLOCK) ? "on" : "off",
+            KIOUEditorFeatureEnabled(KIOU_FEATURE_CHAR_BYPASS)  ? "on" : "off",
+            KIOUEditorPersistedSelection(), g_inHook]);
+
     if (g_inHook) return;
     g_inHook = 1;
     @try {
@@ -77,7 +86,7 @@ static void hook_SyncItemListReply_merge(void *self, void *parseContext) {
             int32_t count = 0;
             if (readRepeatedField(self, 0x20, &arr, &count)) {
                 IPALog([NSString stringWithFormat:
-                        @"[SyncItemListReply] updatedSupplyList count=%d", count]);
+                        @"[SYNC-ITEM-LIST-REPLY] refresh: list=updatedSupplyList count=%d", count]);
                 int32_t decoTotal    = 0;
                 int32_t flipped      = 0;
                 int32_t alreadyOwned = 0;
@@ -88,7 +97,7 @@ static void hook_SyncItemListReply_merge(void *self, void *parseContext) {
                     uint8_t isAcquired    = readU8(elem, 0x30);
                     int32_t acquiredCount = readI32(elem, 0x34);
                     IPALog([NSString stringWithFormat:
-                            @"[SyncItemListReply]   [%d] mstSupplyId=%d (%s) isAcquired=%d acquiredCount=%d",
+                            @"[SYNC-ITEM-LIST-REPLY] refresh: index=%d mstSupplyId=%d band=%s isAcquired=%d acquiredCount=%d",
                             i, mstSupplyId, supplyBand(mstSupplyId),
                             (int)isAcquired, acquiredCount]);
 
@@ -103,10 +112,10 @@ static void hook_SyncItemListReply_merge(void *self, void *parseContext) {
                     }
                 }
                 IPALog([NSString stringWithFormat:
-                        @"[UNLOCK] decoration total=%d already_owned=%d unlocked=%d owned_after=%d",
+                        @"[UNLOCK] updated: scope=decoration total=%d alreadyOwned=%d unlocked=%d ownedAfter=%d",
                         decoTotal, alreadyOwned, flipped, alreadyOwned + flipped]);
             } else {
-                IPALog(@"[SyncItemListReply] updatedSupplyList unreadable/empty");
+                IPALog(@"[SYNC-ITEM-LIST-REPLY] skipped: reason=unreadable list=updatedSupplyList");
             }
         }
 
@@ -117,7 +126,7 @@ static void hook_SyncItemListReply_merge(void *self, void *parseContext) {
             int32_t charCount = 0;
             if (readRepeatedField(self, 0x28, &charArr, &charCount)) {
                 IPALog([NSString stringWithFormat:
-                        @"[UNLOCK-CHAR] updatedCharacterList count=%d", charCount]);
+                        @"[UNLOCK-CHAR] refresh: list=updatedCharacterList count=%d", charCount]);
                 int32_t charTotal    = 0;
                 int32_t contractFlip = 0;
                 int32_t acquiredFlip = 0;
@@ -130,7 +139,7 @@ static void hook_SyncItemListReply_merge(void *self, void *parseContext) {
                     uint8_t isContract     = readU8(elem, 0x20);
                     uint8_t isAcquired     = readU8(elem, 0x30);
                     IPALog([NSString stringWithFormat:
-                            @"[UNLOCK-CHAR]   [%d] mstCharacterId=%d intimacyLevel=%d "
+                            @"[UNLOCK-CHAR] refresh: index=%d mstCharacterId=%d intimacyLevel=%d "
                             @"isContract=%d isAcquired=%d",
                             i, mstCharacterId, intimacyLevel,
                             (int)isContract, (int)isAcquired]);
@@ -152,11 +161,11 @@ static void hook_SyncItemListReply_merge(void *self, void *parseContext) {
                     }
                 }
                 IPALog([NSString stringWithFormat:
-                        @"[UNLOCK-CHAR] characters total=%d contract_unlocked=%d "
-                        @"acquired_unlocked=%d intimacy_maxed=%d",
+                        @"[UNLOCK-CHAR] updated: scope=characters total=%d contractUnlocked=%d "
+                        @"acquiredUnlocked=%d intimacyMaxed=%d",
                         charTotal, contractFlip, acquiredFlip, intimacyFlip]);
             } else {
-                IPALog(@"[UNLOCK-CHAR] updatedCharacterList unreadable/empty");
+                IPALog(@"[UNLOCK-CHAR] skipped: reason=unreadable list=updatedCharacterList");
             }
         }
 
@@ -166,7 +175,7 @@ static void hook_SyncItemListReply_merge(void *self, void *parseContext) {
             int32_t skinCount = 0;
             if (readRepeatedField(self, 0x30, &skinArr, &skinCount)) {
                 IPALog([NSString stringWithFormat:
-                        @"[UNLOCK-CHAR] updatedCharacterSkinList count=%d", skinCount]);
+                        @"[UNLOCK-CHAR] refresh: list=updatedCharacterSkinList count=%d", skinCount]);
                 int32_t skinTotal = 0;
                 int32_t skinFlip  = 0;
                 for (int32_t i = 0; i < skinCount; i++) {
@@ -176,7 +185,7 @@ static void hook_SyncItemListReply_merge(void *self, void *parseContext) {
                     int32_t mstCharId = readI32(elem, 0x1C);
                     uint8_t isAcquired = readU8(elem, 0x20);
                     IPALog([NSString stringWithFormat:
-                            @"[UNLOCK-CHAR]   skin[%d] mstSkinId=%d mstCharId=%d isAcquired=%d",
+                            @"[UNLOCK-CHAR] refresh: skinIndex=%d mstSkinId=%d mstCharId=%d isAcquired=%d",
                             i, mstSkinId, mstCharId, (int)isAcquired]);
 
                     if (!isPlausibleMstId(mstSkinId)) continue;
@@ -186,10 +195,10 @@ static void hook_SyncItemListReply_merge(void *self, void *parseContext) {
                     if (readI32(elem, 0x30) <= 0) writeI32(elem, 0x30, 1);
                 }
                 IPALog([NSString stringWithFormat:
-                        @"[UNLOCK-CHAR] skins total=%d unlocked=%d",
+                        @"[UNLOCK-CHAR] updated: scope=skins total=%d unlocked=%d",
                         skinTotal, skinFlip]);
             } else {
-                IPALog(@"[UNLOCK-CHAR] updatedCharacterSkinList unreadable/empty");
+                IPALog(@"[UNLOCK-CHAR] skipped: reason=unreadable list=updatedCharacterSkinList");
             }
         }
 
@@ -207,7 +216,7 @@ static void hook_SyncItemListReply_merge(void *self, void *parseContext) {
     done:;
     } @catch (NSException *e) {
         IPALog([NSString stringWithFormat:
-                @"[SyncItemListReply] exception: %@", e]);
+                @"[SYNC-ITEM-LIST-REPLY] exception: error=%@", e]);
     }
     g_inHook = 0;
 }
@@ -216,6 +225,7 @@ void KIOUEditorInstallSyncItemListHook(uintptr_t unityBase) {
     s_origSyncItemListReply_merge = (InternalMergeFrom_t)KIOUHookInstall(
         KIOU_HOOK_NAME_SYNC_ITEM_LIST_MERGE,
         (void *)hook_SyncItemListReply_merge, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_SYNC_ITEM_LIST_MERGE, hook_SyncItemListReply_merge);
     IPALog([NSString stringWithFormat:
             @"[SYNC-ITEM] installed: orig=%p",
             (void *)s_origSyncItemListReply_merge]);

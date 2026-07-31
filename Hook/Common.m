@@ -146,7 +146,7 @@ void KIOUEditorApplyPersistedSelectionToLists(void *charArr, int32_t charCount,
 
     if (flagMoves > 0 || idRewrites > 0) {
         IPALog([NSString stringWithFormat:
-                @"[SELECT] applied persisted skinId=%d (flag_moves=%d id_rewrites=%d)",
+                @"[SELECT] applied: scope=persistedSelection skinId=%d flagMoves=%d idRewrites=%d",
                 target, flagMoves, idRewrites]);
     }
 }
@@ -161,16 +161,16 @@ __attribute__((weak))
 void KIOUEditorReconButtonImage(void *uiButton, const char *tag) {
     (void)uiButton;
     IPALog([NSString stringWithFormat:
-            @"[COMMON] KIOUEditorReconButtonImage stub called (tag=%s) — "
-            @"FriendUnhide not yet ported",
+            @"[COMMON] fire: fn=KIOUEditorReconButtonImage note=\"stub\" "
+            @"reason=friendUnhideNotPorted tag=%s",
             tag ? tag : "(null)"]);
 }
 
 __attribute__((weak))
 void KIOUEditorApplyTitleSpriteToClone(void *cloneGo) {
     (void)cloneGo;
-    IPALog(@"[COMMON] KIOUEditorApplyTitleSpriteToClone stub called — "
-           @"FriendUnhide not yet ported");
+    IPALog(@"[COMMON] fire: fn=KIOUEditorApplyTitleSpriteToClone note=\"stub\" "
+           @"reason=friendUnhideNotPorted");
 }
 
 // Consumer-provided UIKit settings presenter. Real definition lives in
@@ -179,8 +179,8 @@ void KIOUEditorApplyTitleSpriteToClone(void *cloneGo) {
 // hasn't wired the UIKit side yet.
 __attribute__((weak))
 void KIOUEditorPresentSettings(void) {
-    IPALog(@"[COMMON] KIOUEditorPresentSettings stub called — "
-           @"consumer tweak did not wire the UIKit settings surface");
+    IPALog(@"[COMMON] fire: fn=KIOUEditorPresentSettings note=\"stub\" "
+           @"reason=consumerUIKitNotWired");
 }
 
 // ---------------------------------------------------------------------------
@@ -220,6 +220,8 @@ NSString *KIOUEditorFeatureLabel(KiouFeature f) {
     case KIOU_FEATURE_VOICE_UNLOCK:   return @"Voice Unlock";
     case KIOU_FEATURE_ASSIST_ENABLE:  return @"Assist Enable";
     case KIOU_FEATURE_DISABLE_AFK:    return @"Disable AFK";
+    case KIOU_FEATURE_INGAME_ANALYSIS:    return @"In-Game Analysis";
+    case KIOU_FEATURE_AI_SPECIAL_SUPPORT: return @"AI Special Support";
     default:                          return @"(unknown)";
     }
 }

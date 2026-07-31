@@ -42,7 +42,7 @@ void KIOUSaveAccount(NSString *uuid, NSString *userName, NSString *openId,
                    NSString *userId, NSString *distinctId) {
     if (userId.length == 0) {
         IPALog([NSString stringWithFormat:
-                  @"[ACCOUNT] save skipped: missing userId (uuid=%@ userName=%@)",
+                  @"[ACCOUNT] skipped: reason=missingUserId uuid=%@ userName=%@",
                   uuid ?: @"", userName ?: @""]);
         return;
     }
@@ -59,6 +59,7 @@ void KIOUSaveAccount(NSString *uuid, NSString *userName, NSString *openId,
         kFieldDistinctId: distinctId ?: @"",
         kFieldSavedAt:    @((NSInteger)[[NSDate date] timeIntervalSince1970]),
     };
+    BOOL noopMerge = NO;
     for (NSDictionary *e in existing) {
         NSString *eId = e[kFieldUserId];
         if ([eId isKindOfClass:[NSString class]] && [eId isEqualToString:userId]) {
@@ -67,6 +68,15 @@ void KIOUSaveAccount(NSString *uuid, NSString *userName, NSString *openId,
             if (userName.length   == 0) merged[kFieldUserName]   = e[kFieldUserName]   ?: @"";
             if (openId.length     == 0) merged[kFieldOpenId]     = e[kFieldOpenId]     ?: @"";
             if (distinctId.length == 0) merged[kFieldDistinctId] = e[kFieldDistinctId] ?: @"";
+            // Detect a no-op re-save: every non-timestamp field already
+            // matches. Common when RunLoginSequence and AccountExists both
+            // fire for the same account within a few dozen ms.
+            noopMerge =
+                [merged[kFieldUuid]       isEqual:e[kFieldUuid]] &&
+                [merged[kFieldUserName]   isEqual:e[kFieldUserName]] &&
+                [merged[kFieldOpenId]     isEqual:e[kFieldOpenId]] &&
+                [merged[kFieldUserId]     isEqual:e[kFieldUserId]] &&
+                [merged[kFieldDistinctId] isEqual:e[kFieldDistinctId]];
             [next addObject:merged];
             replaced = YES;
         } else {
@@ -75,9 +85,11 @@ void KIOUSaveAccount(NSString *uuid, NSString *userName, NSString *openId,
     }
     if (!replaced) [next addObject:fresh];
     [d setObject:next forKey:kKeyAccounts];
-    IPALog([NSString stringWithFormat:
-              @"[ACCOUNT] saved userId=%@ userName=%@ uuid=%@ total=%lu",
-              userId, userName ?: @"", uuid ?: @"", (unsigned long)next.count]);
+    if (!noopMerge) {
+        IPALog([NSString stringWithFormat:
+                  @"[ACCOUNT] saved: userId=%@ userName=%@ uuid=%@ total=%lu",
+                  userId, userName ?: @"", uuid ?: @"", (unsigned long)next.count]);
+    }
     kfPostAccountStateChanged();
 }
 
@@ -104,7 +116,7 @@ void KIOUUpdateAccountProfile(NSString *userId, NSString *openId,
     if (!found) return;
     [d setObject:next forKey:kKeyAccounts];
     IPALog([NSString stringWithFormat:
-              @"[ACCOUNT] profile updated userId=%@ openId=%@ ranks=%lu",
+              @"[ACCOUNT] updated: scope=profile userId=%@ openId=%@ ranks=%lu",
               userId, openId ?: @"", (unsigned long)ranks.count]);
     kfPostAccountStateChanged();
 }
@@ -122,7 +134,7 @@ void KIOUDeleteAccount(NSString *userId) {
     }
     [d setObject:next forKey:kKeyAccounts];
     IPALog([NSString stringWithFormat:
-              @"[ACCOUNT] deleted userId=%@ remaining=%lu",
+              @"[ACCOUNT] deleted: userId=%@ remaining=%lu",
               userId, (unsigned long)next.count]);
     kfPostAccountStateChanged();
 }
@@ -139,7 +151,7 @@ void KIOUSetActiveAccountUserId(NSString *userId) {
     } else {
         [d setObject:userId forKey:kKeyActiveUserId];
     }
-    IPALog([NSString stringWithFormat:@"[ACCOUNT] active_user_id=%@",
+    IPALog([NSString stringWithFormat:@"[ACCOUNT] applied: activeUserId=%@",
               userId.length > 0 ? userId : @"(none)"]);
     kfPostAccountStateChanged();
 }
@@ -156,7 +168,7 @@ void KIOUSetForceRegisterOnNextLaunch(bool enabled) {
     } else {
         [d removeObjectForKey:kKeyForceRegister];
     }
-    IPALog([NSString stringWithFormat:@"[ACCOUNT] force_register=%s",
+    IPALog([NSString stringWithFormat:@"[ACCOUNT] applied: forceRegister=%s",
               enabled ? "true" : "false"]);
 }
 
@@ -169,10 +181,10 @@ void KIOUSetPendingDeviceId(NSString *uuid) {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
     if (uuid.length == 0) {
         [d removeObjectForKey:kKeyPendingDeviceId];
-        IPALog(@"[ACCOUNT] pending_device_id cleared");
+        IPALog(@"[ACCOUNT] deleted: field=pendingDeviceId");
     } else {
         [d setObject:uuid forKey:kKeyPendingDeviceId];
-        IPALog([NSString stringWithFormat:@"[ACCOUNT] pending_device_id=%@", uuid]);
+        IPALog([NSString stringWithFormat:@"[ACCOUNT] applied: pendingDeviceId=%@", uuid]);
     }
     kfPostAccountStateChanged();
 }
@@ -186,10 +198,10 @@ void KIOUSetPendingDistinctId(NSString *uuid) {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
     if (uuid.length == 0) {
         [d removeObjectForKey:kKeyPendingDistinctId];
-        IPALog(@"[ACCOUNT] pending_distinct_id cleared");
+        IPALog(@"[ACCOUNT] deleted: field=pendingDistinctId");
     } else {
         [d setObject:uuid forKey:kKeyPendingDistinctId];
-        IPALog([NSString stringWithFormat:@"[ACCOUNT] pending_distinct_id=%@", uuid]);
+        IPALog([NSString stringWithFormat:@"[ACCOUNT] applied: pendingDistinctId=%@", uuid]);
     }
     kfPostAccountStateChanged();
 }
@@ -198,13 +210,13 @@ void KIOUSwitchAccount(NSString *uuid) {
     NSString *armedDistinct = KIOUPendingDistinctId();
     if (armedDistinct.length > 0) {
         IPALog([NSString stringWithFormat:
-                  @"[ACCOUNT] KIOUSwitchAccount refused: Register flow in progress "
-                  @"(pending_distinct_id=%@)", armedDistinct]);
+                  @"[ACCOUNT] skipped: op=switchAccount reason=registerInProgress "
+                  @"pendingDistinctId=%@", armedDistinct]);
         return;
     }
     KIOUSetPendingDeviceId(uuid);
     IPALog([NSString stringWithFormat:
-              @"[ACCOUNT] KIOUSwitchAccount armed pending_device_id=%@", uuid ?: @"(nil)"]);
+              @"[ACCOUNT] armed: op=switchAccount pendingDeviceId=%@", uuid ?: @"(nil)"]);
 }
 
 // ---------------------------------------------------------------------------

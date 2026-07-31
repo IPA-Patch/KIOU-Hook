@@ -22,10 +22,12 @@ from __future__ import annotations
 
 import ast
 import pathlib
+import re
 import sys
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 RECIPES_DIR = REPO_ROOT / "recipes"
+RVA_DIR = REPO_ROOT / "rva"
 
 
 class RecipeError(Exception):
@@ -75,7 +77,7 @@ def _find_int_assign(module: ast.Module, name: str) -> int:
     raise RecipeError(f"{name}: not found")
 
 
-def _find_sites_assign(module: ast.Module) -> list[tuple[int, str, str, str, str]]:
+def _find_sites_assign(module: ast.Module) -> list[tuple[int | None, str, str, str, str]]:
     """Extract the ``SITES`` list of tuples from a per-version recipe."""
 
     for node in module.body:
@@ -84,17 +86,22 @@ def _find_sites_assign(module: ast.Module) -> list[tuple[int, str, str, str, str
                 if isinstance(target, ast.Name) and target.id == "SITES":
                     if not isinstance(node.value, ast.List):
                         raise RecipeError("SITES: expected list literal")
-                    rows: list[tuple[int, str, str, str, str]] = []
+                    rows: list[tuple[int | None, str, str, str, str]] = []
                     for i, elt in enumerate(node.value.elts):
                         if not isinstance(elt, ast.Tuple) or len(elt.elts) != 5:
                             raise RecipeError(
                                 f"SITES[{i}]: expected 5-tuple (rva, prologue_hex, hook_id_name, kind, label)"
                             )
                         rva_n, prologue_n, hook_id_n, kind_n, label_n = elt.elts
-                        if not isinstance(rva_n, ast.Constant) or not isinstance(
-                            rva_n.value, int
-                        ):
-                            raise RecipeError(f"SITES[{i}].rva: expected int constant")
+                        # rva may be None: a placeholder row reserving the
+                        # cave slot of a method this build no longer has.
+                        if not isinstance(rva_n, ast.Constant) or isinstance(
+                            rva_n.value, bool
+                        ) or not isinstance(rva_n.value, (int, type(None))):
+                            raise RecipeError(
+                                f"SITES[{i}].rva: expected int constant or None"
+                            )
+                        rva_val: int | None = rva_n.value
                         if not isinstance(prologue_n, ast.Constant) or not isinstance(
                             prologue_n.value, str
                         ):
@@ -127,10 +134,101 @@ def _find_sites_assign(module: ast.Module) -> list[tuple[int, str, str, str, str
                         ):
                             raise RecipeError(f"SITES[{i}].label: expected str")
                         rows.append(
-                            (rva_n.value, prologue_n.value, hook_id_val, kind_val, label_n.value)
+                            (rva_val, prologue_n.value, hook_id_val, kind_val, label_n.value)
                         )
                     return rows
     raise RecipeError("SITES: not found at module level")
+
+
+# v1_0_1's SITES table predates the cave-index invariant and is sparse: it
+# omits the 17 sites that only exist from 1.0.2 on, so every row after the
+# first gap sits at a position below its hook id. Fixing it needs a
+# placeholder-row mechanism in tools.caves, tracked separately; until then
+# the check reports it as a warning so it can't mask a NEW recipe going
+# sparse.
+_KNOWN_SPARSE = {"v1_0_1.py"}
+
+
+def _check_cave_index(name: str, sites, hook_ids: dict[str, int]) -> list[str]:
+    """Every SITES row's position must equal its hook id.
+
+    ``tools.caves.apply_patches`` allocates cave payloads sequentially in
+    declaration order, while the consumer's ChinlanDispatcher computes a
+    cave's orig-call trampoline as ``cave_start + hook_id * cave_size``.
+    The two only agree when position == id, so a row inserted anywhere but
+    the end silently sends every later hook's orig call into the wrong
+    cave.
+    """
+    sparse = [
+        f"{name} SITES[{i}] ({label}): hook id {hook_id_name} = {hook_ids[hook_id_name]} "
+        f"!= row position {i}"
+        for i, (_rva, _prologue, hook_id_name, _kind, label) in enumerate(sites)
+        if hook_id_name in hook_ids and hook_ids[hook_id_name] != i
+    ]
+    if not sparse:
+        return []
+    if name in _KNOWN_SPARSE:
+        print(
+            f"warning: {name} is sparse ({len(sparse)} row(s) whose position != hook id). "
+            "Its chinlan orig-call trampolines land in the wrong cave.",
+            file=sys.stderr,
+        )
+        return []
+    return [
+        *sparse,
+        f"{name}: rows must stay dense and append-only — cave-bypass addresses "
+        "are computed as cave_start + hook_id * cave_size.",
+    ]
+
+
+def _check_rva_header(recipe: pathlib.Path, sites) -> list[str]:
+    """Cross-check ``rva/kiou_rva_<ver>.h`` against the recipe's SITES.
+
+    The JB / jailed builds hook through the header's ``KIOU_HOOK_RVA_*``
+    macros while the chinlan build patches via the recipe, so a drift
+    between the two means the same hook lands on two different addresses
+    depending on the build flavour.
+    """
+    header = RVA_DIR / f"kiou_rva_{recipe.stem[1:]}.h"
+    if not header.exists():
+        return [f"{recipe.name}: no matching RVA header at {header.relative_to(REPO_ROOT)}"]
+
+    text = header.read_text()
+    defines = {
+        m.group(1): int(m.group(2), 16)
+        for m in re.finditer(r"#define\s+(KIOU_HOOK_RVA_\w+)\s+(0x[0-9A-Fa-f]+)", text)
+    }
+    catalog = _catalog_macro_by_hook_id()
+
+    errors = []
+    for _rva, _prologue, hook_id_name, _kind, label in sites:
+        if _rva is None:
+            continue  # placeholder row: no site, so nothing to cross-check
+        macro = catalog.get(hook_id_name)
+        if macro is None:
+            errors.append(
+                f"{recipe.name} ({label}): {hook_id_name} has no KIOUHook.m catalog row"
+            )
+            continue
+        if macro not in defines:
+            errors.append(f"{header.name}: missing #define {macro}")
+        elif defines[macro] != _rva:
+            errors.append(
+                f"{header.name}: {macro} = 0x{defines[macro]:X} but "
+                f"{recipe.name} SITES has 0x{_rva:X} for {label}"
+            )
+    return errors
+
+
+def _catalog_macro_by_hook_id() -> dict[str, str]:
+    """Map ``KIOU_HOOK_ID_*`` to the ``KIOU_HOOK_RVA_*`` macro KIOUHook.m
+    resolves it through."""
+    text = (REPO_ROOT / "KIOUHook.m").read_text()
+    rows = re.findall(
+        r"\{\s*KIOU_HOOK_NAME_\w+\s*,\s*(-1|KIOU_HOOK_ID_\w+)\s*,\s*(KIOU_HOOK_RVA_\w+)\s*\}",
+        text,
+    )
+    return {hook_id: macro for hook_id, macro in rows if hook_id != "-1"}
 
 
 def check() -> None:
@@ -200,12 +298,17 @@ def check() -> None:
                 errors.append(
                     f"{where}: CAVE_OBSERVER row's hook_id {hook_id_name!r} unexpectedly in ENTRY_SLOT_INDEX"
                 )
+            if rva is None:
+                continue
             if rva in seen_rvas:
                 errors.append(
                     f"{where}: duplicate site RVA 0x{rva:X} (already at {seen_rvas[rva]})"
                 )
             else:
                 seen_rvas[rva] = label
+
+        errors.extend(_check_cave_index(recipe.name, sites, hook_ids))
+        errors.extend(_check_rva_header(recipe, sites))
 
     if errors:
         raise RecipeError("\n  ".join(["recipe check failed:", *errors]))

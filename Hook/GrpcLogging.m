@@ -1,4 +1,5 @@
 #import "KIOUHook.h"
+#import "Hook/Common.h"
 #import "Account/Persistence.h"
 #import "il2cpp.h"
 #import "logging.h"
@@ -95,7 +96,7 @@ void KIOUHookHeaderProviderSetOrUpdate(void *self, void *keyStr, void *valueStr,
             if (newValue) {
                 valueStr = newValue;
                 IPALog([NSString stringWithFormat:
-                          @"[HEADER] x-user-id swapped → %@", target]);
+                          @"[HEADER] swapped: header=x-user-id value=%@", target]);
             }
         }
     }
@@ -123,13 +124,19 @@ void KIOUInstallGrpcLoggingHook(uintptr_t unityBase) {
     s_origHttpMsgInvokerSendAsync = (GenericSendAsync_t)
         KIOUHookInstall(KIOU_HOOK_NAME_HTTPMSGINVOKER_SEND_ASYNC,
                          (void *)KIOUHookHttpMsgInvokerSendAsync, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase,
+                            KIOU_HOOK_SLOT_HTTPMSGINVOKER_SEND_ASYNC,
+                            KIOUHookHttpMsgInvokerSendAsync);
 
     s_origHeaderProviderSetOrUpdate = (HeaderProviderSetOrUpdate_t)
         KIOUHookInstall(KIOU_HOOK_NAME_HEADER_PROVIDER_SET_OR_UPDATE_HEADER,
                          (void *)KIOUHookHeaderProviderSetOrUpdate, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase,
+                            KIOU_HOOK_SLOT_HEADER_PROVIDER_SET_OR_UPDATE_HEADER,
+                            KIOUHookHeaderProviderSetOrUpdate);
 
     IPALog([NSString stringWithFormat:
-              @"[GRPC] hook resolved: origSendAsync=%p origSetOrUpdate=%p strNew=%p",
+              @"[GRPC] resolved: origSendAsync=%p origSetOrUpdate=%p strNew=%p",
               s_origHttpMsgInvokerSendAsync,
               s_origHeaderProviderSetOrUpdate,
               g_GrpcStringNew]);

@@ -10,8 +10,8 @@ from __future__ import annotations
 import importlib
 import os
 
+from recipes.common import DYLIB_PATH as _DEFAULT_DYLIB_PATH
 from recipes.common import (
-    DYLIB_PATH,
     ENTRY_SLOT_CAPACITY,
     ENTRY_SLOT_COUNT,
     ENTRY_SLOT_INDEX,
@@ -19,6 +19,21 @@ from recipes.common import (
     TARGET_BASENAME,
     build_exports,
 )
+
+# Consumer override — the shared default points at KiouForge.dylib because
+# KiouForge is the primary consumer, but other consumers (KiouEditor, …)
+# ship their own dylib basename. Set KIOU_HOOK_DYLIB_PATH in the build
+# environment to override the injected LC_LOAD_DYLIB target. Anything
+# starting with @ (@executable_path / @loader_path / @rpath) is accepted
+# verbatim; anything else is prefixed with the standard
+# @executable_path/Frameworks/ layout to prevent typos.
+_override = os.environ.get("KIOU_HOOK_DYLIB_PATH", "").strip()
+if _override:
+    DYLIB_PATH = _override if _override.startswith("@") else (
+        f"@executable_path/Frameworks/{_override}"
+    )
+else:
+    DYLIB_PATH = _DEFAULT_DYLIB_PATH
 
 __all__ = [
     "CAVE_PATCHES",
@@ -41,6 +56,7 @@ __all__ = [
 _VERSIONS: dict[str, str | None] = {
     "1.0.1": "recipes.v1_0_1",
     "1.0.2": "recipes.v1_0_2",
+    "1.1.0": "recipes.v1_1_0",
 }
 
 _DEFAULT_VERSION = "1.0.2"

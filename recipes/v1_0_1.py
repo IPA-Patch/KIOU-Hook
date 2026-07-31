@@ -18,7 +18,7 @@ CAVE_REGION         = (0x8268024, 0x826C000)
 # See v1_0_2 for the rationale: 0x8F90C80 (__DATA.__bss) is unstable —
 # UnityRuntime overwrites it after KIOUChinlanPublish. Move to __common
 # right after the entry-slot table capacity, where publishes survive.
-HOOK_SLOT_RVA       = 0x091E92B8
+HOOK_SLOT_RVA       = 0x091E93B8
 PROBED_HOOK_SLOT_RVA = HOOK_SLOT_RVA
 
 INJECT_ENTRY_TABLE_RVA        = 0x8F90C00
@@ -69,5 +69,23 @@ SITES = [
     (0x5DD1E08, "f44fbea9", "KIOU_HOOK_ID_UIBUTTONBASE_ONPOINTERCLICK", CAVE_ENTRY, "UIButtonBase.OnPointerClick"),
     (0x5DCC728, "ff0303d1", "KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT",        CAVE_ENTRY, "TitleScene+<OnActivateAsync>d__10.MoveNext"),
     (0x59455D4, "f44fbea9", "KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK",    CAVE_ENTRY, "GameOrchestrator.IsAfkEnabled"),
+    (0x597B570, "ff8302d1", "KIOU_HOOK_ID_BSE_EVALUATE_ASYNC",          CAVE_ENTRY, "BeginnerSupportEvaluator.EvaluateAsync"),
+
+    # --- KiouEditor 棋桜覚醒 (AI Special Support) UI-unlock caves. ------------
+    # Server-side reject on the network still applies; this is UI unlock only.
+    (0x5B4FE18, "00204339", "KIOU_HOOK_ID_MOVE_RESULT_CAN_USE_SPECIAL",  CAVE_ENTRY, "ShogiMoveResultStatus.get_CanUseAiSpecialSupport"),
+    (0x5B4FDE8, "00bc40b9", "KIOU_HOOK_ID_MOVE_RESULT_FREE_REMAINING",   CAVE_ENTRY, "ShogiMoveResultStatus.get_AiSpecialSupportRemainingFreeCount"),
+    (0x5B4FDF8, "00c040b9", "KIOU_HOOK_ID_MOVE_RESULT_TICKET_REMAINING", CAVE_ENTRY, "ShogiMoveResultStatus.get_AiSpecialSupportRemainingTicketCount"),
+    (0x5B4BC54, "006040b9", "KIOU_HOOK_ID_MP_FREE_REMAINING",            CAVE_ENTRY, "ShogiMatchingPlayerStatus.get_AiSpecialSupportFreeRemainingCount"),
+    (0x5B4BC64, "006440b9", "KIOU_HOOK_ID_MP_PAID_AVAILABLE",            CAVE_ENTRY, "ShogiMatchingPlayerStatus.get_AiSpecialSupportPaidAvailableCount"),
+
+    # --- NativeSyncSession Search* variants (see v1_0_2 for rationale). ------
+    # Prologues verified on 2026-07-12 against assets/1.0.1/Kiou-1.0.1.ipa.
+    (0x5D32154, "ffc300d1", "KIOU_HOOK_ID_NSS_SEARCH",              CAVE_ENTRY, "NativeSyncSession.Search"),
+    (0x5D32AA8, "ffc302d1", "KIOU_HOOK_ID_NSS_SEARCHMULTI",         CAVE_ENTRY, "NativeSyncSession.SearchMulti"),
+    (0x5D337A4, "ff4302d1", "KIOU_HOOK_ID_NSS_SEARCHMULTIPV",       CAVE_ENTRY, "NativeSyncSession.SearchMultiPV"),
+    (0x5D33D10, "ff4303d1", "KIOU_HOOK_ID_NSS_SEARCHMULTIWITHPV",   CAVE_ENTRY, "NativeSyncSession.SearchMultiWithPV"),
+    (0x5D34A90, "ff8302d1", "KIOU_HOOK_ID_NSS_SEARCHMULTIPVWITHPV", CAVE_ENTRY, "NativeSyncSession.SearchMultiPVWithPV"),
+    (0x5D31D98, "ff8301d1", "KIOU_HOOK_ID_NSS_SETOPTION",            CAVE_ENTRY, "NativeSyncSession.SetOption"),
 ]
 # fmt: on

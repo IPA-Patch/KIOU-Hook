@@ -91,6 +91,44 @@ HOOK_IDS: dict[str, int] = {
     "KIOU_HOOK_ID_UIBUTTONBASE_ONPOINTERCLICK":  31,
     "KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT":         32,
     "KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK":     33,
+    "KIOU_HOOK_ID_BSE_EVALUATE_ASYNC":           34,
+    # KiouEditor CAVE_ENTRY hooks for 棋桜覚醒 (AI Special Support) UI unlock.
+    "KIOU_HOOK_ID_MOVE_RESULT_CAN_USE_SPECIAL":  35,
+    "KIOU_HOOK_ID_MOVE_RESULT_FREE_REMAINING":   36,
+    "KIOU_HOOK_ID_MOVE_RESULT_TICKET_REMAINING": 37,
+    "KIOU_HOOK_ID_MP_FREE_REMAINING":            38,
+    "KIOU_HOOK_ID_MP_PAID_AVAILABLE":            39,
+    # Matching-seat filter (ported from KiouEngineBridge).
+    "KIOU_HOOK_ID_MATCH_GET_VALID_FOUND":          40,
+    "KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT": 41,
+    "KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE":       42,
+    "KIOU_HOOK_ID_MATCH_START_D3_MOVENEXT":        43,
+    "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC":    44,
+    "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_DISPOSE_ASYNC": 49,
+    # Universal gRPC wire logger — every protobuf request/response passes
+    # through one of these four Google.Protobuf bottlenecks. Verified
+    # against IngameService.__Helper_SerializeMessage / DeserializeMessage
+    # (BL disassembly, 1.0.2): grpc-dotnet on this app uses ToByteArray OR
+    # WriteTo(IBufferWriter<byte>) outbound, and MergeFrom(msg, ROSeq,
+    # bool, reg) inbound. MergeFrom(CIS) covers other CIS-based paths.
+    "KIOU_HOOK_ID_MSG_EXT_TO_BYTE_ARRAY":         45,
+    "KIOU_HOOK_ID_MSG_EXT_WRITE_TO_BUFFER":       46,
+    "KIOU_HOOK_ID_MSG_EXT_MERGE_FROM_ROSEQ":      47,
+    "KIOU_HOOK_ID_MSG_PARSER_MERGE_FROM_CODED":   48,
+    # NativeSyncSession Search* variants (BSE's real search path — SearchFull
+    # is only the single-position API). SITES position must match HOOK_ID
+    # because ChinlanDispatcher.bypassEntryForHook(id) does cave_start +
+    # id*cave_size; new rows always go at the end.
+    "KIOU_HOOK_ID_NSS_SEARCH":                    50,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTI":               51,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTIPV":             52,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTIWITHPV":         53,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTIPVWITHPV":       54,
+    # NSS.SetOption(name, value). Also called directly from FrameworkPassthrough
+    # via the raw RVA pointer, so those internal calls will re-enter the hook
+    # body and produce their own log line — that's intentional (lets us see
+    # both game-issued and tweak-issued option writes on one timeline).
+    "KIOU_HOOK_ID_NSS_SETOPTION":                 55,
 }
 
 # Entry slot indices — one per CAVE_ENTRY row, must mirror KIOUHook.h.
@@ -126,10 +164,33 @@ ENTRY_SLOT_INDEX: dict[str, int] = {
     "KIOU_HOOK_ID_UIBUTTONBASE_ONPOINTERCLICK":  26,
     "KIOU_HOOK_ID_TITLE_SCENE_MOVENEXT":         27,
     "KIOU_HOOK_ID_GAME_ORCHESTRATOR_IS_AFK":     28,
+    "KIOU_HOOK_ID_BSE_EVALUATE_ASYNC":           29,
+    # KiouEditor CAVE_ENTRY slots for 棋桜覚醒 (AI Special Support) UI unlock.
+    "KIOU_HOOK_ID_MOVE_RESULT_CAN_USE_SPECIAL":  30,
+    "KIOU_HOOK_ID_MOVE_RESULT_FREE_REMAINING":   31,
+    "KIOU_HOOK_ID_MOVE_RESULT_TICKET_REMAINING": 32,
+    "KIOU_HOOK_ID_MP_FREE_REMAINING":            33,
+    "KIOU_HOOK_ID_MP_PAID_AVAILABLE":            34,
+    "KIOU_HOOK_ID_MATCH_GET_VALID_FOUND":          35,
+    "KIOU_HOOK_ID_MATCH_RECEIVE_TIMEOUT_MOVENEXT": 36,
+    "KIOU_HOOK_ID_MATCH_STREAM_ARGS_CREATE":       37,
+    "KIOU_HOOK_ID_MATCH_START_D3_MOVENEXT":        38,
+    "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_SEND_ASYNC":    39,
+    "KIOU_HOOK_ID_MATCH_STREAM_HANDLER_DISPOSE_ASYNC": 44,
+    "KIOU_HOOK_ID_MSG_EXT_TO_BYTE_ARRAY":         40,
+    "KIOU_HOOK_ID_MSG_EXT_WRITE_TO_BUFFER":       41,
+    "KIOU_HOOK_ID_MSG_EXT_MERGE_FROM_ROSEQ":      42,
+    "KIOU_HOOK_ID_MSG_PARSER_MERGE_FROM_CODED":   43,
+    "KIOU_HOOK_ID_NSS_SEARCH":                    45,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTI":               46,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTIPV":             47,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTIWITHPV":         48,
+    "KIOU_HOOK_ID_NSS_SEARCHMULTIPVWITHPV":       49,
+    "KIOU_HOOK_ID_NSS_SETOPTION":                 50,
 }
 
-ENTRY_SLOT_COUNT    = 29
-ENTRY_SLOT_CAPACITY = 32   # reserved sibling room for future entry hooks
+ENTRY_SLOT_COUNT    = 51
+ENTRY_SLOT_CAPACITY = 56   # reserved sibling room for future entry hooks
 
 # ---------------------------------------------------------------------------
 # Cave payload builders
@@ -266,15 +327,25 @@ def build_exports(sites, afk_site, afk_orig_8, hook_slot_rva, entry_slot_base_rv
             )
         )
 
+    # A row whose site is None is a placeholder: the method it patched no
+    # longer exists in this build. Its cave must still be reserved, because
+    # ChinlanDispatcher addresses a cave as cave_start + hook_id * cave_size
+    # and every later hook would otherwise shift down by one slot. The
+    # driver writes nothing for it and reserves len(expected) bytes, so
+    # `expected` carries one payload's worth of zeroes and the builder is
+    # never called.
     cave_patches = [
         (
             site,
-            bytes.fromhex(prologue_hex),
-            payload_for_site(
+            bytes(CAVE_PAYLOAD_SIZE) if site is None
+            else bytes.fromhex(prologue_hex),
+            None if site is None else payload_for_site(
                 site, bytes.fromhex(prologue_hex), hook_id_name, kind,
                 hook_slot_rva, entry_slot_base_rva,
             ),
-            f"{label}: route to KIOU-Hook {kind} cave ({hook_id_name})",
+            f"{label}: route to KIOU-Hook {kind} cave ({hook_id_name})"
+            if site is not None
+            else f"{label}: absent from this build ({hook_id_name})",
         )
         for site, prologue_hex, hook_id_name, kind, label in sites
     ]
@@ -282,6 +353,7 @@ def build_exports(sites, afk_site, afk_orig_8, hook_slot_rva, entry_slot_base_rv
     sites_index = [
         (HOOK_IDS[hook_id_name], site_rva, prologue_hex, label)
         for site_rva, prologue_hex, hook_id_name, kind, label in sites
+        if site_rva is not None
     ]
 
     return patches, cave_patches, sites_index

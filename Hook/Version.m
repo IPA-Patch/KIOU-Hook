@@ -55,7 +55,7 @@ static void hook_TitleSceneMoveNext(void *sm) {
                         if (ptrLooksValid(newStr)) {
                             *(void *volatile *)((uint8_t *)titleScene + 0x40) = newStr;
                             IPALog([NSString stringWithFormat:
-                                    @"[VERSION] _appVersionFormat: \"%@\" -> \"%@\"",
+                                    @"[VERSION] applied: field=appVersionFormat oldValue=\"%@\" newValue=\"%@\"",
                                     origFormat, newFormat]);
                         }
                     }
@@ -63,7 +63,7 @@ static void hook_TitleSceneMoveNext(void *sm) {
             }
         } @catch (NSException *e) {
             IPALog([NSString stringWithFormat:
-                    @"[VERSION] format patch exception: %@", e]);
+                    @"[VERSION] exception: scope=formatPatch error=%@", e]);
         }
     }
 
@@ -76,13 +76,14 @@ void KIOUEditorInstallVersionHook(uintptr_t unityBase) {
     s_il2cpp_string_new =
         (il2cpp_string_new_t)dlsym(RTLD_DEFAULT, "il2cpp_string_new");
     if (!s_il2cpp_string_new) {
-        IPALog(@"[VERSION] dlsym(il2cpp_string_new) failed — format patch will NOP");
+        IPALog(@"[VERSION] skipped: reason=dlsymFailed symbol=il2cpp_string_new effect=formatPatchNoop");
         // Continue and still publish the hook; the body NULL-guards on
         // s_il2cpp_string_new and falls through to orig.
     }
     s_origTitleSceneMoveNext = (TitleSceneMoveNext_t)KIOUHookInstall(
         KIOU_HOOK_NAME_TITLE_SCENE_MOVENEXT,
         (void *)hook_TitleSceneMoveNext, unityBase);
+    KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_TITLE_SCENE_MOVENEXT, hook_TitleSceneMoveNext);
     IPALog([NSString stringWithFormat:
             @"[VERSION] installed: orig=%p commit=%s",
             (void *)s_origTitleSceneMoveNext, KIOU_EDITOR_COMMIT]);
