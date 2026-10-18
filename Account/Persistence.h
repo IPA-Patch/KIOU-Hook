@@ -52,6 +52,10 @@ void KIOUUpdateAccountProfile(NSString *userId,
 NSString *KIOUActiveAccountUserId(void);
 void      KIOUSetActiveAccountUserId(NSString *userId);
 
+// openId (XXXX-YYYY-...) stored for the active account; nil when the active
+// account is unknown or its openId has not been captured yet.
+NSString *KIOUActiveAccountOpenId(void);
+
 // When true, next AccountExists check returns false unconditionally,
 // routing KIOU into the name-entry Register flow.
 bool KIOUForceRegisterOnNextLaunch(void);

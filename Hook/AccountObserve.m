@@ -1,6 +1,7 @@
 #import "KIOUHook.h"
 #import "Hook/Common.h"
 #import "Account/Persistence.h"
+#import "Hook/AccountObserveOffsets.h"
 #import "il2cpp.h"
 #import "logging.h"
 #import <dlfcn.h>
@@ -26,33 +27,6 @@
 // JB-only MSHookFunction targets. Their addresses still come from the
 // catalog — as hook_id = -1 rows — so they track the build's target
 // version like everything else.
-
-// ---------------------------------------------------------------------------
-// Field offsets
-// ---------------------------------------------------------------------------
-#define OFF_USER_SAVE_DATA_USER_NAME  0x10
-#define OFF_USER_SAVE_DATA_OPEN_ID    0x18
-#define OFF_USER_SAVE_DATA_USER_ID    0x20
-#define OFF_USER_SAVE_DATA_DEVICE_ID  0x28
-
-#define OFF_LOGIN_REPLY_ACCESS_TOKEN  0x18
-#define OFF_LOGIN_REPLY_SESSION_ID    0x20
-#define OFF_LOGIN_REPLY_DEVICE_ID     0x28
-#define OFF_LOGIN_REPLY_USER_NAME     0x30
-
-#define OFF_SM_LOGIN_STATE     0x00
-#define OFF_SM_LOGIN_RESULT_D  0x50  // confirmed on KIOU 1.0.1 build 11
-
-#define OFF_GET_SELF_PROFILE_REPLY_PROFILE  0x18
-#define OFF_SELF_PROFILE_USER_NAME          0x18
-#define OFF_SELF_PROFILE_OPEN_USER_ID       0x20
-#define OFF_SELF_PROFILE_RANK_LIST          0x28
-#define OFF_REPEATED_ARRAY                  0x10
-#define OFF_REPEATED_COUNT                  0x18
-#define OFF_RANK_STATUS_MATCH_TYPE     0x18
-#define OFF_RANK_STATUS_RANK_RULE_TYPE 0x1C
-#define OFF_RANK_STATUS_RANK           0x24
-#define OFF_RANK_STATUS_RATING         0x28
 
 // ---------------------------------------------------------------------------
 // Observed state
@@ -188,7 +162,8 @@ static void observeRunLoginSeqCompletion(void *self) {
     if (!self) return;
     if (readI32(self, OFF_SM_LOGIN_STATE) != -2) return;
 
-    uintptr_t offsets[] = { 0x38, 0x40, 0x48, OFF_SM_LOGIN_RESULT_D };
+    uintptr_t offsets[] = { OFF_SM_LOGIN_AWAITER, OFF_SM_LOGIN_AWAITER + 0x08,
+                            OFF_SM_LOGIN_AWAITER + 0x10, OFF_SM_LOGIN_RESULT_D };
     for (size_t i = 0; i < sizeof(offsets)/sizeof(offsets[0]); i++) {
         void *candidate = readPtr(self, offsets[i]);
         if (!candidate) continue;

@@ -25,12 +25,25 @@
 //     SAFE_ID. Logs the userId we acted on so the user can lock it in
 //     via KIOUSetSelfUserId for stricter PvP behavior later.
 //
-// Fields:
-//   +0x18 userId            (il2cpp String*)
-//   +0x30 mstIconId         (int32)
-//   +0x38 mstCharacterId    (int32) <- rewritten
-//   +0x40 mstCharacterSkinId(int32) <- rewritten
-//   +0x68 enableBeginnerSupport (bool) <- forced to 1 for self
+// Fields (dump.cs, Dto.ShogiMatchingPlayerStatus):
+//                          <= 1.1.0   >= 1.5.0
+//   +0x18 userId            String*    openUserId_ (same slot; the JWT-sub
+//                                      userId_ was removed in 1.5.0)
+//   mstCharacterId  (int32) 0x38       0x3C   <- rewritten
+//   mstCharacterSkinId      0x40       0x48   <- rewritten
+//   enableBeginnerSupport   0x68       0x90   <- forced to 1 for self
+//     (bool; 1.5.0 added currentWinStreak_ / mstCharacterIsContract_ /
+//      mstCharacterSkinLimitBreakLevel_ / mstShogiFinishBgmId_ /
+//      favoriteStrategy_ / favoriteCastling_, shifting everything past rank_)
+//   NOTE: the 1.1.0 dump puts enableBeginnerSupport_ at 0x70 (it inserted a
+//   field ahead of aiSpecialSupport*Count_); build 15 still uses 0x68 here.
+//
+// Self identity, build >= 22: the +0x18 value is an openUserId, so it is
+// compared with the active account's openId (KIOUActiveAccountOpenId), not
+// the JWT-sub userId. KIOUSelfUserId / KIOUSetSelfUserId are not used there:
+// that key is shared with older builds and holds a JWT-sub, so storing an
+// openId in it would corrupt their stale-check. Without a captured openId
+// the SAFE_ID skin heuristic applies and nothing is persisted.
 //
 // We rewrite ONLY mstCharacterId + mstCharacterSkinId. Icon / frame /
 // title / piece / board / BGM are decorations the user actually owns
@@ -39,9 +52,15 @@
 // ===========================================================================
 
 #define OFF_MP_USER_ID                 0x18
+#if KIOU_HOOK_TARGET_BUILD >= 22
+#define OFF_MP_MST_CHAR_ID             0x3C
+#define OFF_MP_MST_SKIN_ID             0x48
+#define OFF_MP_ENABLE_BEGINNER_SUPPORT 0x90
+#else
 #define OFF_MP_MST_CHAR_ID             0x38
 #define OFF_MP_MST_SKIN_ID             0x40
 #define OFF_MP_ENABLE_BEGINNER_SUPPORT 0x68
+#endif
 
 static NSString *const kCpuUserIdSentinel = @"cpu";
 
@@ -63,10 +82,17 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
         NSString *userId = il2cppStringToNSString(userIdStr);
         int32_t dbgSkinId = readI32(self, OFF_MP_MST_SKIN_ID);
         int32_t dbgCharId = readI32(self, OFF_MP_MST_CHAR_ID);
+#if KIOU_HOOK_TARGET_BUILD >= 22
+        IPALog([NSString stringWithFormat:
+                @"[MATCH] fire: openUserId=%@ skin=%d char=%d persisted=%d",
+                userId.length ? userId : @"(empty)",
+                dbgSkinId, dbgCharId, KIOUEditorPersistedSelection()]);
+#else
         IPALog([NSString stringWithFormat:
                 @"[MATCH] fire: userId=%@ skin=%d char=%d persisted=%d",
                 userId.length ? userId : @"(empty)",
                 dbgSkinId, dbgCharId, KIOUEditorPersistedSelection()]);
+#endif
 
         if (userId.length == 0) return;
         if ([userId isEqualToString:kCpuUserIdSentinel]) return;
@@ -74,6 +100,13 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
         int32_t curSkinId = dbgSkinId;
         int32_t curCharId = dbgCharId;
 
+#if KIOU_HOOK_TARGET_BUILD >= 22
+        NSString *configuredSelf = KIOUActiveAccountOpenId();
+        if (configuredSelf.length == 0) {
+            configuredSelf = nil;
+            IPALog(@"[MATCH] fallback: reason=openIdUnset next=skinHeuristic");
+        }
+#else
         // Prefer KIOUActiveAccountUserId (refreshed on every AccountExists
         // observation) over the heuristic-captured KIOUSelfUserId. On
         // account switch (or when a stale self_user_id was captured by a
@@ -96,6 +129,7 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
             KIOUSetSelfUserId(activeUserId);
             configuredSelf = activeUserId;
         }
+#endif
         BOOL isSelf;
         if (configuredSelf) {
             isSelf = [userId isEqualToString:configuredSelf];
@@ -116,12 +150,14 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
         // First-ever heuristic hit: lock the UUID in so subsequent matches
         // (including PvP where both players might wear SAFE_ID) use a
         // strict userId comparison instead of the skin-based guess.
+#if KIOU_HOOK_TARGET_BUILD < 22
         if (!configuredSelf) {
             KIOUSetSelfUserId(userId);
             IPALog([NSString stringWithFormat:
                     @"[MATCH] applied: field=selfUserId source=heuristic userId=%@ next=strict",
                     userId]);
         }
+#endif
 
         // Force assist-on for self, even when the CPU-match toggle is off.
         // Done regardless of whether a persisted skin override is active.
@@ -159,7 +195,11 @@ void KIOUEditorInstallMatchingPlayerHook(uintptr_t unityBase) {
         KIOU_HOOK_NAME_MATCHING_PLAYER_MERGE,
         (void *)hook_MatchingPlayer_merge, unityBase);
     KIOU_HOOK_PUBLISH_SLOT(unityBase, KIOU_HOOK_SLOT_MATCHING_PLAYER_MERGE, hook_MatchingPlayer_merge);
+#if KIOU_HOOK_TARGET_BUILD >= 22
+    NSString *configured = KIOUActiveAccountOpenId();
+#else
     NSString *configured = KIOUSelfUserId();
+#endif
     IPALog([NSString stringWithFormat:
             @"[MATCH] installed: orig=%p selfUserId=%@",
             (void *)s_origMatchingPlayer_merge,
