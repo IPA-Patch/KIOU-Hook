@@ -26,17 +26,19 @@
 //     via KIOUSetSelfUserId for stricter PvP behavior later.
 //
 // Fields (dump.cs, Dto.ShogiMatchingPlayerStatus):
-//                          <= 1.1.0   >= 1.5.0
-//   +0x18 userId            String*    openUserId_ (same slot; the JWT-sub
-//                                      userId_ was removed in 1.5.0)
-//   mstCharacterId  (int32) 0x38       0x3C   <- rewritten
-//   mstCharacterSkinId      0x40       0x48   <- rewritten
-//   enableBeginnerSupport   0x68       0x90   <- forced to 1 for self
-//     (bool; 1.5.0 added currentWinStreak_ / mstCharacterIsContract_ /
+//                          1.0.x      1.1.0      1.5.0
+//   +0x18 userId            String*    String*    openUserId_ (same slot; the
+//                                                 JWT-sub userId_ was removed
+//                                                 in 1.5.0)
+//   mstCharacterId  (int32) 0x38       0x38       0x3C   <- rewritten
+//   mstCharacterSkinId      0x40       0x40       0x48   <- rewritten
+//   enableBeginnerSupport   0x68       0x70       0x90   <- forced to 1 for self
+//     (bool; 1.1.0 inserted a field ahead of aiSpecialSupport*Count_;
+//      1.5.0 added currentWinStreak_ / mstCharacterIsContract_ /
 //      mstCharacterSkinLimitBreakLevel_ / mstShogiFinishBgmId_ /
 //      favoriteStrategy_ / favoriteCastling_, shifting everything past rank_)
-//   NOTE: the 1.1.0 dump puts enableBeginnerSupport_ at 0x70 (it inserted a
-//   field ahead of aiSpecialSupport*Count_); build 15 still uses 0x68 here.
+//   NOTE: build 15 (1.1.0) used to read 0x68 here, the wrong slot; it now
+//   reads 0x70 (build 11/12 keep 0x68).
 //
 // Self identity, build >= 22: the +0x18 value is an openUserId, so it is
 // compared with the active account's openId (KIOUActiveAccountOpenId), not
@@ -56,6 +58,10 @@
 #define OFF_MP_MST_CHAR_ID             0x3C
 #define OFF_MP_MST_SKIN_ID             0x48
 #define OFF_MP_ENABLE_BEGINNER_SUPPORT 0x90
+#elif KIOU_HOOK_TARGET_BUILD == 15
+#define OFF_MP_MST_CHAR_ID             0x38
+#define OFF_MP_MST_SKIN_ID             0x40
+#define OFF_MP_ENABLE_BEGINNER_SUPPORT 0x70
 #else
 #define OFF_MP_MST_CHAR_ID             0x38
 #define OFF_MP_MST_SKIN_ID             0x40
@@ -63,6 +69,15 @@
 #endif
 
 static NSString *const kCpuUserIdSentinel = @"cpu";
+
+#if KIOU_HOOK_TARGET_BUILD >= 22
+// openUserId comparison key: upper-case with '-' removed, so
+// "7272-6307-4353-4126" and "7272630743534126" (any case) compare equal.
+static NSString *normalizeOpenId(NSString *s) {
+    return [[s stringByReplacingOccurrencesOfString:@"-" withString:@""]
+            uppercaseString];
+}
+#endif
 
 typedef void (*ReplyMergeFrom_t)(void *self, void *parseContext);
 
@@ -141,7 +156,11 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
 #endif
         BOOL isSelf;
         if (configuredSelf) {
+#if KIOU_HOOK_TARGET_BUILD >= 22
+            isSelf = [normalizeOpenId(userId) isEqualToString:normalizeOpenId(configuredSelf)];
+#else
             isSelf = [userId isEqualToString:configuredSelf];
+#endif
         } else {
             // No locked-in self and no known active: assume the player
             // carrying SAFE_ID is us (SelectCharacter forces every outgoing
