@@ -74,7 +74,8 @@ void      KIOUSetPendingDistinctId(NSString *uuid);
 void KIOUSwitchAccount(NSString *uuid);
 
 // ---------------------------------------------------------------------------
-// Self user UUID — matches ShogiMatchingPlayerStatus.userId. Consumers that
+// Self user UUID — matches ShogiMatchingPlayerStatus.userId (builds < 22 only;
+// build >= 22 carries an openUserId there, see KIOUActiveAccountOpenId). Consumers that
 // need to identify "self" among a list of players (e.g. avatar rewrites in
 // match-room DTOs) persist their once-captured self id here.
 //

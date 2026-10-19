@@ -18,6 +18,10 @@
 #define OFF_LOGIN_REPLY_SESSION_ID    0x20
 #define OFF_LOGIN_REPLY_DEVICE_ID     0x28
 #define OFF_LOGIN_REPLY_USER_NAME     0x30
+#if KIOU_HOOK_TARGET_BUILD >= 22
+// 1.5.0 added openUserId_ (the public XXXX-YYYY-ZZZZ-WWWW id) to LoginReply.
+#define OFF_LOGIN_REPLY_OPEN_USER_ID  0x38
+#endif
 
 // RunLoginSequenceAsync.<d__1> state machine. The LoginReply is read out of
 // the UniTask.Awaiter<ILoginReply> (<>u__1) hoisted local, 0x18 past the
@@ -36,10 +40,13 @@
 #define OFF_GET_SELF_PROFILE_REPLY_PROFILE  0x18
 #define OFF_SELF_PROFILE_USER_NAME          0x18
 #define OFF_SELF_PROFILE_OPEN_USER_ID       0x20
-// dump.cs SelfUserProfileStatus.rankList_: 0x28 on 1.0.x, 0x30 on 1.1.0 and
-// 1.5.0 (userAttribute_ inserted at 0x28). Build 15 keeps its historical
-// value here; only the new build takes 0x30.
+// dump.cs SelfUserProfileStatus.rankList_: 0x28 on 1.0.x (build 11/12), 0x30
+// on 1.1.0 (build 15) and 1.5.0 (userAttribute_ was inserted at 0x28 in
+// 1.1.0). Build 15 previously read 0x28 here, i.e. the wrong field; it now
+// reads 0x30.
 #if KIOU_HOOK_TARGET_BUILD >= 22
+#define OFF_SELF_PROFILE_RANK_LIST          0x30
+#elif KIOU_HOOK_TARGET_BUILD == 15
 #define OFF_SELF_PROFILE_RANK_LIST          0x30
 #else
 #define OFF_SELF_PROFILE_RANK_LIST          0x28

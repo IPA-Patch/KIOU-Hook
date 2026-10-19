@@ -178,7 +178,12 @@ static void observeRunLoginSeqCompletion(void *self) {
         NSString *userId = extractJWTSub(accessToken);
         if (userId.length == 0) userId = g_latestObservedUserId;
         if (userId.length > 0 && deviceId.length > 0) {
-            KIOUSaveAccount(deviceId, userName, @"", userId, deviceId);
+            NSString *openId = @"";
+#if KIOU_HOOK_TARGET_BUILD >= 22  // LoginReply.openUserId_; empty never overwrites a saved openId
+            openId = readIl2CppStr(readPtr(candidate, OFF_LOGIN_REPLY_OPEN_USER_ID)) ?: @"";
+            IPALog([NSString stringWithFormat:@"[ACCOUNT] resolved: subject=loginReply openUserId=%@", openId.length ? openId : @"(empty)"]);
+#endif
+            KIOUSaveAccount(deviceId, userName, openId, userId, deviceId);
             KIOUSetActiveAccountUserId(userId);
         }
         KIOUSetPendingDeviceId(nil);
