@@ -60,8 +60,13 @@ void KIOUEditorSetPersistedSelection(int32_t skinId) {
 //     duplicate ids which broke client-side validation (the "tap to start"
 //     generic error).
 //   - Else (e.g. SelectCharacterReply partial list that only carries the
-//     SAFE_ID swap result): REWRITE the currently-selected entry's id to
-//     target. Best-effort UI override when no target entry is in the list.
+//     SAFE_ID swap result): REWRITE the currently-selected skin entry to
+//     the target skin (and its owning char id). Best-effort UI override
+//     when no target entry is in the list.
+//   - The character list is keyed by CHARACTER id, not skin id, so it is
+//     searched with the char id derived from the target skin. A character
+//     entry is never rewritten: inventing a char id that is not in the
+//     master data makes the client reject the reply (error 50001).
 // ---------------------------------------------------------------------------
 
 #define OFF_CHAR_MST_ID          0x18
@@ -73,6 +78,15 @@ void KIOUEditorSetPersistedSelection(int32_t skinId) {
 #define OFF_SKIN_IS_ACQUIRED     0x20
 #define OFF_SKIN_IS_SELECTED     0x21
 
+// mstCharacterId owning a skin, used when the skin list has no entry for the
+// target. Observed skin table (1.5.0): 1..16 -> same id, 10001 -> 1,
+// 20001 -> 2, 60001 -> 6, i.e. the skin id's 10000s digit (same derivation
+// as charIdForSkinId in MatchingPlayer.m). Skins 1..16 map to themselves, so
+// older builds (skin == char) behave exactly as before.
+static inline int32_t charIdFallbackForSkinId(int32_t skinId) {
+    return skinId >= 10000 ? skinId / 10000 : skinId;
+}
+
 void KIOUEditorApplyPersistedSelectionToLists(void *charArr, int32_t charCount,
                                         void *skinArr, int32_t skinCount) {
     int32_t target = KIOUEditorPersistedSelection();
@@ -80,6 +94,8 @@ void KIOUEditorApplyPersistedSelectionToLists(void *charArr, int32_t charCount,
 
     int32_t flagMoves = 0;
     int32_t idRewrites = 0;
+    int32_t targetChar = charIdFallbackForSkinId(target);
+    int32_t charSkipped = 0;
 
     {
         int32_t curIdx = -1, tgtIdx = -1;
@@ -90,6 +106,10 @@ void KIOUEditorApplyPersistedSelectionToLists(void *charArr, int32_t charCount,
             if (readI32(elem, OFF_SKIN_MST_SKIN_ID) == target) tgtIdx = i;
         }
         if (tgtIdx >= 0) {
+            // The skin table is authoritative for the owning character.
+            int32_t listed = readI32(readArrayElem(skinArr, tgtIdx),
+                                     OFF_SKIN_MST_CHAR_ID);
+            if (listed > 0) targetChar = listed;
             if (curIdx != tgtIdx) {
                 if (curIdx >= 0) {
                     writeU8(readArrayElem(skinArr, curIdx),
@@ -105,7 +125,7 @@ void KIOUEditorApplyPersistedSelectionToLists(void *charArr, int32_t charCount,
         } else if (curIdx >= 0) {
             void *cur = readArrayElem(skinArr, curIdx);
             writeI32(cur, OFF_SKIN_MST_SKIN_ID, target);
-            writeI32(cur, OFF_SKIN_MST_CHAR_ID, target);
+            writeI32(cur, OFF_SKIN_MST_CHAR_ID, targetChar);
             if (readU8(cur, OFF_SKIN_IS_ACQUIRED) == 0) {
                 writeU8(cur, OFF_SKIN_IS_ACQUIRED, 1);
             }
@@ -119,7 +139,7 @@ void KIOUEditorApplyPersistedSelectionToLists(void *charArr, int32_t charCount,
             void *elem = readArrayElem(charArr, i);
             if (!elem) continue;
             if (readU8(elem, OFF_CHAR_IS_SELECTED) == 1) curIdx = i;
-            if (readI32(elem, OFF_CHAR_MST_ID) == target) tgtIdx = i;
+            if (readI32(elem, OFF_CHAR_MST_ID) == targetChar) tgtIdx = i;
         }
         if (tgtIdx >= 0) {
             if (curIdx != tgtIdx) {
@@ -135,19 +155,22 @@ void KIOUEditorApplyPersistedSelectionToLists(void *charArr, int32_t charCount,
                 flagMoves++;
             }
         } else if (curIdx >= 0) {
-            void *cur = readArrayElem(charArr, curIdx);
-            writeI32(cur, OFF_CHAR_MST_ID, target);
-            if (readU8(cur, OFF_CHAR_IS_ACQUIRED) == 0) {
-                writeU8(cur, OFF_CHAR_IS_ACQUIRED, 1);
-            }
-            idRewrites++;
+            // Target character is not in this (partial) list, e.g. the
+            // SelectCharacterReply carrying only the SAFE_ID entry. Leave the
+            // entry's id alone rather than fabricate a character id.
+            charSkipped++;
         }
     }
 
     if (flagMoves > 0 || idRewrites > 0) {
         IPALog([NSString stringWithFormat:
-                @"[SELECT] applied: scope=persistedSelection skinId=%d flagMoves=%d idRewrites=%d",
-                target, flagMoves, idRewrites]);
+                @"[SELECT] applied: scope=persistedSelection skinId=%d charId=%d flagMoves=%d idRewrites=%d",
+                target, targetChar, flagMoves, idRewrites]);
+    }
+    if (charSkipped > 0) {
+        IPALog([NSString stringWithFormat:
+                @"[SELECT] skipped: scope=persistedSelection reason=charIdNotInList skinId=%d charId=%d",
+                target, targetChar]);
     }
 }
 

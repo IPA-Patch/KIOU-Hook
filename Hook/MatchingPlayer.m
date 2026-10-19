@@ -68,6 +68,15 @@ typedef void (*ReplyMergeFrom_t)(void *self, void *parseContext);
 
 static ReplyMergeFrom_t s_origMatchingPlayer_merge = NULL;
 
+// mstCharacterId owning a skin. Observed skin table (1.5.0 SyncItemList):
+// 1..16 -> same id, 10001 -> 1, 20001 -> 2, 60001 -> 6, i.e. the skin id's
+// 10000s digit. Assumes the table's mstCharId keeps matching that. Older
+// builds wrote skin == char, which is the same for skins 1..16. A char id
+// that does not exist makes the client abort the match (error 50001).
+static inline int32_t charIdForSkinId(int32_t skinId) {
+    return skinId >= 10000 ? skinId / 10000 : skinId;
+}
+
 static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
     if (s_origMatchingPlayer_merge) {
         s_origMatchingPlayer_merge(self, parseContext);
@@ -175,14 +184,15 @@ static void hook_MatchingPlayer_merge(void *self, void *parseContext) {
         if (!KIOUEditorFeatureEnabled(KIOU_FEATURE_CHAR_BYPASS)) return;
         int32_t target = KIOUEditorPersistedSelection();
         if (target == 0) return;
-        if (curSkinId == target && curCharId == target) return;
+        int32_t targetChar = charIdForSkinId(target);
+        if (curSkinId == target && curCharId == targetChar) return;
 
         writeI32(self, OFF_MP_MST_SKIN_ID, target);
-        writeI32(self, OFF_MP_MST_CHAR_ID, target);  // 1:1 mapping skin <-> char
+        writeI32(self, OFF_MP_MST_CHAR_ID, targetChar);
 
         IPALog([NSString stringWithFormat:
                 @"[MATCH] applied: userId=%@ skin=%d->%d char=%d->%d selfLocked=%@",
-                userId, curSkinId, target, curCharId, target,
+                userId, curSkinId, target, curCharId, targetChar,
                 configuredSelf ? @"YES" : @"NO->YES"]);
     } @catch (NSException *e) {
         IPALog([NSString stringWithFormat:
