@@ -57,6 +57,7 @@ _VERSIONS: dict[str, str | None] = {
     "1.0.1": "recipes.v1_0_1",
     "1.0.2": "recipes.v1_0_2",
     "1.1.0": "recipes.v1_1_0",
+    "1.5.0": "recipes.v1_5_0",
 }
 
 _DEFAULT_VERSION = "1.0.2"

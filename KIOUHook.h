@@ -59,8 +59,10 @@
 #import "rva/kiou_rva_1_0_2.h"
 #elif KIOU_HOOK_TARGET_BUILD == 15
 #import "rva/kiou_rva_1_1_0.h"
+#elif KIOU_HOOK_TARGET_BUILD == 22
+#import "rva/kiou_rva_1_5_0.h"
 #else
-#error "KIOU_HOOK_TARGET_BUILD must be 11 (1.0.1), 12 (1.0.2) or 15 (1.1.0)"
+#error "KIOU_HOOK_TARGET_BUILD must be 11 (1.0.1), 12 (1.0.2), 15 (1.1.0) or 22 (1.5.0)"
 #endif
 
 // ---------------------------------------------------------------------------

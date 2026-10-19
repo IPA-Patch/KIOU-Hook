@@ -70,6 +70,31 @@ DIRECT_ABI_ANCHORS: dict[str, str] = {
         "Project.Title.TitleMenuPopupPresenter.RunDeleteAccountSequenceAsync(CancellationToken)",
 }
 
+# Per-version overrides of DIRECT_ABI_ANCHORS, keyed by version then macro.
+# A string replaces the anchor for that version; None means the method does
+# not exist in that build, so the macro is emitted as 0x0 and the consumer
+# must not call it (KIOUHookSiteAddr treats 0 as absent).
+VERSION_ANCHOR_OVERRIDES: dict[str, dict[str, str | None]] = {
+    "1.5.0": {
+        # Both sequences moved from TitleMenuPopupPresenter to ApplicationUtility.
+        "KIOU_HOOK_RVA_RUN_RESET_USER_DATA_SEQ":
+            "Project.Composition.ApplicationUtility.RunResetUserDataSequenceAsync(CancellationToken)",
+        "KIOU_HOOK_RVA_RUN_DELETE_ACCOUNT_SEQ":
+            "Project.Composition.ApplicationUtility.RunDeleteAccountSequenceAsync(CancellationToken)",
+        # Write(RecordManager, KIFWriteOptions) is gone; only
+        # Write(Position, IReadOnlyList<Move>, KIFWriteOptions) remains.
+        "KIOU_HOOK_RVA_KIFWRITER_WRITE": None,
+    },
+}
+
+# CFBundleVersion per supported version, used when --build is omitted.
+VERSION_BUILDS: dict[str, int] = {
+    "1.0.1": 11,
+    "1.0.2": 12,
+    "1.1.0": 15,
+    "1.5.0": 22,
+}
+
 HEADER = """\
 #pragma once
 
@@ -172,7 +197,18 @@ def generate(version: str, index_path: str, build: int) -> str:
             else:
                 unresolved.append(f"{macro} ({' | '.join(candidates)})")
 
-    for macro, anchor in DIRECT_ABI_ANCHORS.items():
+    overrides = VERSION_ANCHOR_OVERRIDES.get(version, {})
+    unknown = overrides.keys() - DIRECT_ABI_ANCHORS.keys()
+    if unknown:
+        raise SystemExit(
+            f"error: VERSION_ANCHOR_OVERRIDES[{version!r}] names unknown macros: "
+            + ", ".join(sorted(unknown))
+        )
+    for macro, default_anchor in DIRECT_ABI_ANCHORS.items():
+        anchor = overrides.get(macro, default_anchor)
+        if anchor is None:
+            values[macro] = 0
+            continue
         type_name, method_name, params = split_label(anchor)
         hit = find_method(by_name, type_name, method_name, param_types=params)
         if hit is None:
@@ -214,12 +250,19 @@ def generate(version: str, index_path: str, build: int) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", required=True, help="Target version, e.g. 1.1.0")
-    parser.add_argument("--build", required=True, type=int, help="CFBundleVersion")
+    parser.add_argument(
+        "--build",
+        type=int,
+        help="CFBundleVersion (default: VERSION_BUILDS[version])",
+    )
     parser.add_argument("--index", required=True, help="dump.cs.index.json for it")
     parser.add_argument("--out", help="Output path (default: rva/kiou_rva_<ver>.h)")
     args = parser.parse_args()
 
-    text = generate(args.version, args.index, args.build)
+    build = args.build if args.build is not None else VERSION_BUILDS.get(args.version)
+    if build is None:
+        parser.error(f"--build is required: no known build for {args.version}")
+    text = generate(args.version, args.index, build)
     out = pathlib.Path(
         args.out or RVA_DIR / f"kiou_rva_{args.version.replace('.', '_')}.h"
     )

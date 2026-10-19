@@ -144,6 +144,18 @@ NSString *KIOUActiveAccountUserId(void) {
     return [v isKindOfClass:[NSString class]] ? v : nil;
 }
 
+NSString *KIOUActiveAccountOpenId(void) {
+    NSString *active = KIOUActiveAccountUserId();
+    if (active.length == 0) return nil;
+    for (NSDictionary *e in KIOUListAccounts()) {
+        NSString *eId = e[kFieldUserId];
+        if (![eId isKindOfClass:[NSString class]] || ![eId isEqualToString:active]) continue;
+        NSString *open = e[kFieldOpenId];
+        return ([open isKindOfClass:[NSString class]] && open.length > 0) ? open : nil;
+    }
+    return nil;
+}
+
 void KIOUSetActiveAccountUserId(NSString *userId) {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
     if (userId.length == 0) {
